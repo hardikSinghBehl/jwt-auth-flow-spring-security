@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @EnableConfigurationProperties(JwtConfigurationProperties.class)
 @RequiredArgsConstructor
-public class JwtUtils {
+public class JwtUtility {
 
 	private final JwtConfigurationProperties jwtConfigurationProperties;
 
