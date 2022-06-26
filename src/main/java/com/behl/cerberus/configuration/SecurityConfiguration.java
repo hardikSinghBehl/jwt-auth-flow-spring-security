@@ -10,7 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.behl.cerberus.security.constant.ApiPathExclusion;
+import com.behl.cerberus.security.constant.OpenApiPathExclusion;
 import com.behl.cerberus.security.filter.JwtAuthenticationFilter;
 
 import lombok.AllArgsConstructor;
@@ -27,7 +27,7 @@ public class SecurityConfiguration {
 
 		http.cors().and().csrf().disable().exceptionHandling().and().sessionManagement()
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-				.antMatchers(List.of(ApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
+				.antMatchers(List.of(OpenApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
 						.toArray(String[]::new))
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
