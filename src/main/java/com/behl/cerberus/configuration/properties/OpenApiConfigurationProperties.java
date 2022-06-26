@@ -1,4 +1,4 @@
-package com.behl.cerberus.openapi.properties;
+package com.behl.cerberus.configuration.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

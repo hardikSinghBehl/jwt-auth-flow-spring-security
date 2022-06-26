@@ -1,10 +1,10 @@
-package com.behl.cerberus.openapi;
+package com.behl.cerberus.configuration;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.behl.cerberus.openapi.properties.OpenApiConfigurationProperties;
+import com.behl.cerberus.configuration.properties.OpenApiConfigurationProperties;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
