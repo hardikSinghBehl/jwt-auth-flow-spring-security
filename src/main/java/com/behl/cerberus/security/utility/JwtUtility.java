@@ -41,11 +41,13 @@ public class JwtUtility {
 		claims.put("user_id", user.getId());
 		claims.put("account_creation_timestamp", user.getCreatedAt());
 		claims.put("name", user.getFirstName() + " " + user.getLastName());
-		return createToken(claims, user.getEmailId(), TimeUnit.MINUTES.toMillis(30));
+		return createToken(claims, user.getEmailId(),
+				TimeUnit.MINUTES.toMillis(jwtConfigurationProperties.getJwt().getAccessToken().getValidity()));
 	}
 
 	public String generateRefreshToken(final User user) {
-		return createToken(new DefaultClaims(), user.getEmailId(), TimeUnit.DAYS.toMillis(15));
+		return createToken(new DefaultClaims(), user.getEmailId(),
+				TimeUnit.DAYS.toMillis(jwtConfigurationProperties.getJwt().getRefreshToken().getValidity()));
 	}
 
 	public Boolean validateToken(final String token, final UserDetails user) {
@@ -62,7 +64,7 @@ public class JwtUtility {
 		final Claims claims = extractAllClaims(token);
 		return claimsResolver.apply(claims);
 	}
-	
+
 	private Claims extractAllClaims(final String token) {
 		return Jwts.parser().setSigningKey(jwtConfigurationProperties.getJwt().getSecretKey())
 				.parseClaimsJws(token.replace("Bearer ", "")).getBody();
