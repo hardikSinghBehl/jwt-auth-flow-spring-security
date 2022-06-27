@@ -13,6 +13,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.behl.cerberus.security.constant.GetApiPathExclusion;
 import com.behl.cerberus.security.constant.OpenApiPathExclusion;
+import com.behl.cerberus.security.constant.PostApiPathExclusion;
+import com.behl.cerberus.security.constant.PutApiPathExclusion;
 import com.behl.cerberus.security.filter.JwtAuthenticationFilter;
 
 import lombok.AllArgsConstructor;
@@ -26,7 +28,6 @@ public class SecurityConfiguration {
 
 	@Bean
 	public SecurityFilterChain configure(HttpSecurity http) throws Exception {
-
 		http.cors().and().csrf().disable().exceptionHandling().and().sessionManagement()
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
 				.antMatchers(List.of(OpenApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
@@ -34,6 +35,14 @@ public class SecurityConfiguration {
 				.permitAll()
 				.antMatchers(HttpMethod.GET,
 						List.of(GetApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
+								.toArray(String[]::new))
+				.permitAll()
+				.antMatchers(HttpMethod.POST,
+						List.of(PostApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
+								.toArray(String[]::new))
+				.permitAll()
+				.antMatchers(HttpMethod.PUT,
+						List.of(PutApiPathExclusion.values()).stream().map(apiPath -> apiPath.getPath())
 								.toArray(String[]::new))
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
