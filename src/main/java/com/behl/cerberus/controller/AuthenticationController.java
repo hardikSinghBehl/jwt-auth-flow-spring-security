@@ -11,24 +11,30 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.behl.cerberus.dto.RefreshTokenRequestDto;
-import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
+import com.behl.cerberus.dto.UserLoginRequestDto;
+import com.behl.cerberus.service.AuthenticationService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping(value = "/auth")
+@RequiredArgsConstructor
 public class AuthenticationController {
+
+	private final AuthenticationService authenticationService;
 
 	@PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<TokenSuccessResponseDto> userLoginRequestHandler(
 			@RequestBody(required = true) final UserLoginRequestDto userLoginRequestDto) {
-		return null;
+		return ResponseEntity.ok(authenticationService.login(userLoginRequestDto));
 	}
 
 	@PutMapping(value = "/refresh", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<TokenSuccessResponseDto> accessTokenRefreshalRequestHandler(
 			@RequestBody(required = true) final RefreshTokenRequestDto refreshTokenRequestDto) {
-		return null;
+		return ResponseEntity.ok(authenticationService.refreshToken(refreshTokenRequestDto));
 	}
 }

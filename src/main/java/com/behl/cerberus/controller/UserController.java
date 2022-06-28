@@ -10,16 +10,23 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.behl.cerberus.dto.UserCreationRequestDto;
+import com.behl.cerberus.service.UserService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping(value = "/users")
+@RequiredArgsConstructor
 public class UserController {
+
+	private final UserService userService;
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value = HttpStatus.CREATED)
 	public ResponseEntity<HttpStatus> userCreationHandler(
 			@RequestBody(required = true) final UserCreationRequestDto userCreationRequestDto) {
-		return null;
+		userService.create(userCreationRequestDto);
+		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
 }
