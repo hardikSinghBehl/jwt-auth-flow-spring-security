@@ -54,7 +54,9 @@ public class JwtUtility {
 	}
 
 	public String generateRefreshToken(final User user) {
-		return createToken(new DefaultClaims(), user.getEmailId(),
+		final Claims claims = new DefaultClaims();
+		claims.put("user_id", user.getId());
+		return createToken(claims, user.getEmailId(),
 				TimeUnit.DAYS.toMillis(jwtConfigurationProperties.getJwt().getRefreshToken().getValidity()));
 	}
 
