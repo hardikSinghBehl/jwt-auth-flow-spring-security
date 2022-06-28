@@ -21,6 +21,6 @@ public class TokenSuccessResponseDto implements Serializable {
 
 	private final String accessToken;
 	private final String refreshToken;
-	private final LocalDateTime expiresIn;
+	private final LocalDateTime expiresAt;
 
 }

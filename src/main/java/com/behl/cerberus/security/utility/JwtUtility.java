@@ -1,5 +1,7 @@
 package com.behl.cerberus.security.utility;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +38,10 @@ public class JwtUtility {
 		return UUID.fromString((String) extractAllClaims(token).get("user_id"));
 	}
 
+	public LocalDateTime extractExpirationTimestamp(final String token) {
+		return extractClaim(token, Claims::getExpiration).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+	}
+
 	public String generateAccessToken(final User user) {
 		final Claims claims = new DefaultClaims();
 		claims.put("user_id", user.getId());
@@ -55,7 +61,7 @@ public class JwtUtility {
 		return (emailId.equals(user.getUsername()) && !isTokenExpired(token));
 	}
 
-	private Boolean isTokenExpired(final String token) {
+	public Boolean isTokenExpired(final String token) {
 		final var tokenExpirationDate = extractClaim(token, Claims::getExpiration);
 		return tokenExpirationDate.before(new Date());
 	}
