@@ -2,6 +2,7 @@ package com.behl.cerberus.security.utility;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,8 @@ public class JwtUtility {
 	public String generateAccessToken(final User user) {
 		final Claims claims = new DefaultClaims();
 		claims.put("user_id", user.getId());
-		claims.put("account_creation_timestamp", user.getCreatedAt());
+		claims.put("account_creation_timestamp",
+				user.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
 		claims.put("name", user.getFirstName() + " " + user.getLastName());
 		return createToken(claims, user.getEmailId(),
 				TimeUnit.MINUTES.toMillis(jwtConfigurationProperties.getJwt().getAccessToken().getValidity()));
