@@ -13,6 +13,8 @@ import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Type;
+
 import lombok.Data;
 
 @Data
@@ -24,6 +26,7 @@ public class User implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Type(type = "uuid-char")
 	@Column(name = "id", unique = true, nullable = false)
 	private UUID id;
 
