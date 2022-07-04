@@ -1,5 +1,7 @@
 package com.behl.cerberus.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +38,7 @@ public class UserController {
 			@ApiResponse(responseCode = "409", description = "User account with provided email-id already exists") })
 	@ResponseStatus(value = HttpStatus.CREATED)
 	public ResponseEntity<HttpStatus> userCreationHandler(
-			@RequestBody(required = true) final UserCreationRequestDto userCreationRequestDto) {
+			@Valid @RequestBody(required = true) final UserCreationRequestDto userCreationRequestDto) {
 		userService.create(userCreationRequestDto);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}

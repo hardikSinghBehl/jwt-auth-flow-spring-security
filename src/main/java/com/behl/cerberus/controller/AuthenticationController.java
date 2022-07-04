@@ -1,5 +1,7 @@
 package com.behl.cerberus.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +35,7 @@ public class AuthenticationController {
 			@ApiResponse(responseCode = "401", description = "Bad credentials provided. Failed to authenticate user") })
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<TokenSuccessResponseDto> userLoginRequestHandler(
-			@RequestBody(required = true) final UserLoginRequestDto userLoginRequestDto) {
+			@Valid @RequestBody(required = true) final UserLoginRequestDto userLoginRequestDto) {
 		return ResponseEntity.ok(authenticationService.login(userLoginRequestDto));
 	}
 
@@ -43,7 +45,7 @@ public class AuthenticationController {
 			@ApiResponse(responseCode = "403", description = "Refresh token has expired. Failed to refresh access token") })
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<TokenSuccessResponseDto> accessTokenRefreshalRequestHandler(
-			@RequestBody(required = true) final RefreshTokenRequestDto refreshTokenRequestDto) {
+			@Valid @RequestBody(required = true) final RefreshTokenRequestDto refreshTokenRequestDto) {
 		return ResponseEntity.ok(authenticationService.refreshToken(refreshTokenRequestDto));
 	}
 }

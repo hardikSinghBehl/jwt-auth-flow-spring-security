@@ -17,20 +17,20 @@ public class UserCreationRequestDto implements Serializable {
 
 	private static final long serialVersionUID = -6117448062182178039L;
 
-	@NotBlank
+	@NotBlank(message = "first-name must not be empty")
 	@Schema(required = true, description = "first-name of user", example = "Hardik", maxLength = 15, minLength = 3)
 	private final String firstName;
 
-	@NotBlank
+	@NotBlank(message = "last-name must not be empty")
 	@Schema(required = false, description = "last-name of user", example = "Behl", maxLength = 15, minLength = 3)
 	private final String lastName;
 
-	@NotBlank
-	@Email
+	@NotBlank(message = "email-id must not be empty")
+	@Email(message = "email-id must be of valid format")
 	@Schema(required = true, description = "email-id of user", example = "hardik.behl7444@gmail.com")
 	private final String emailId;
 
-	@NotBlank
+	@NotBlank(message = "password must not be empty")
 	@Schema(required = true, description = "secure password to enable user login", example = "somethingSecure")
 	private final String password;
 
