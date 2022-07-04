@@ -40,7 +40,8 @@ public class JwtUtility {
 	}
 
 	public LocalDateTime extractExpirationTimestamp(final String token) {
-		return extractClaim(token, Claims::getExpiration).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+		return extractClaim(token, Claims::getExpiration).toInstant().atZone(ZoneId.systemDefault())
+				.withZoneSameInstant(ZoneId.of("+00:00")).toLocalDateTime();
 	}
 
 	public String generateAccessToken(final User user) {
