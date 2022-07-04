@@ -13,6 +13,7 @@ import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.security.utility.JwtUtility;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,7 +24,7 @@ public class AuthenticationService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtility jwtUtility;
 
-	public TokenSuccessResponseDto login(final UserLoginRequestDto userLoginRequestDto) {
+	public TokenSuccessResponseDto login(@NonNull final UserLoginRequestDto userLoginRequestDto) {
 		final var user = userRepository.findByEmailId(userLoginRequestDto.getEmailId())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials provided"));
 
@@ -38,7 +39,7 @@ public class AuthenticationService {
 				.expiresAt(accessTokenExpirationTimestamp).build();
 	}
 
-	public TokenSuccessResponseDto refreshToken(final RefreshTokenRequestDto refreshTokenRequestDto) {
+	public TokenSuccessResponseDto refreshToken(@NonNull final RefreshTokenRequestDto refreshTokenRequestDto) {
 
 		if (jwtUtility.isTokenExpired(refreshTokenRequestDto.getRefreshToken()))
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token expired");

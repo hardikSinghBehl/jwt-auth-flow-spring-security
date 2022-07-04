@@ -22,6 +22,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultClaims;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -35,16 +36,16 @@ public class JwtUtility {
 	@Value("${spring.application.name}")
 	private String issuer;
 
-	public UUID extractUserId(final String token) {
+	public UUID extractUserId(@NonNull final String token) {
 		return UUID.fromString((String) extractAllClaims(token).get("user_id"));
 	}
 
-	public LocalDateTime extractExpirationTimestamp(final String token) {
+	public LocalDateTime extractExpirationTimestamp(@NonNull final String token) {
 		return extractClaim(token, Claims::getExpiration).toInstant().atZone(ZoneId.systemDefault())
 				.withZoneSameInstant(ZoneId.of("+00:00")).toLocalDateTime();
 	}
 
-	public String generateAccessToken(final User user) {
+	public String generateAccessToken(@NonNull final User user) {
 		final Claims claims = new DefaultClaims();
 		claims.put("user_id", user.getId());
 		claims.put("account_creation_timestamp",
@@ -54,19 +55,19 @@ public class JwtUtility {
 				TimeUnit.MINUTES.toMillis(jwtConfigurationProperties.getJwt().getAccessToken().getValidity()));
 	}
 
-	public String generateRefreshToken(final User user) {
+	public String generateRefreshToken(@NonNull final User user) {
 		final Claims claims = new DefaultClaims();
 		claims.put("user_id", user.getId());
 		return createToken(claims, user.getEmailId(),
 				TimeUnit.DAYS.toMillis(jwtConfigurationProperties.getJwt().getRefreshToken().getValidity()));
 	}
 
-	public Boolean validateToken(final String token, final UserDetails user) {
+	public Boolean validateToken(@NonNull final String token, @NonNull final UserDetails user) {
 		final String emailId = extractClaim(token, Claims::getSubject);
 		return (emailId.equals(user.getUsername()) && !isTokenExpired(token));
 	}
 
-	public Boolean isTokenExpired(final String token) {
+	public Boolean isTokenExpired(@NonNull final String token) {
 		final var tokenExpirationDate = extractClaim(token, Claims::getExpiration);
 		return tokenExpirationDate.before(new Date());
 	}

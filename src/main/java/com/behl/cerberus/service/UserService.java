@@ -12,6 +12,7 @@ import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.repository.UserRepository;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,7 +22,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 
-	public void create(final UserCreationRequestDto userCreationRequestDto) {
+	public void create(@NonNull final UserCreationRequestDto userCreationRequestDto) {
 		if (emailAlreadyTaken(userCreationRequestDto.getEmailId()))
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Account with provided email-id already exists");
 
@@ -34,7 +35,7 @@ public class UserService {
 		userRepository.save(user);
 	}
 
-	public UserDetailDto getById(final UUID userId) {
+	public UserDetailDto getById(@NonNull final UUID userId) {
 		final var user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid user-id provided"));
 		return UserDetailDto.builder().firstName(user.getFirstName()).lastName(user.getLastName())
