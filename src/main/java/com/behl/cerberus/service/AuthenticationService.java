@@ -25,7 +25,7 @@ public class AuthenticationService {
 
 	public TokenSuccessResponseDto login(final UserLoginRequestDto userLoginRequestDto) {
 		final var user = userRepository.findByEmailId(userLoginRequestDto.getEmailId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email-id provided"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials provided"));
 
 		if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword()))
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials provided");
