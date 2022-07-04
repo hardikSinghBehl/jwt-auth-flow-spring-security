@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -22,6 +25,9 @@ public class UserController {
 	private final UserService userService;
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Creates a user account", description = "Registers a unique user record in the system corresponding to the provided information")
+	@ApiResponses(value = { @ApiResponse(responseCode = "201", description = "User account created successfully"),
+			@ApiResponse(responseCode = "409", description = "User account with provided email-id already exists") })
 	@ResponseStatus(value = HttpStatus.CREATED)
 	public ResponseEntity<HttpStatus> userCreationHandler(
 			@RequestBody(required = true) final UserCreationRequestDto userCreationRequestDto) {
