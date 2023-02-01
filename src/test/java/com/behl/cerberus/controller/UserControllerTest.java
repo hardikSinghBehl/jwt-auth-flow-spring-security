@@ -62,7 +62,7 @@ class UserControllerTest {
 		final var response = Assertions.assertThrows(ResponseStatusException.class,
 				() -> userController.userCreationHandler(userCreationRequestDto));
 		assertThat(response.getMessage()).contains(errorMessage);
-		assertThat(response.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 		verify(userService).create(userCreationRequestDto);
 	}
 

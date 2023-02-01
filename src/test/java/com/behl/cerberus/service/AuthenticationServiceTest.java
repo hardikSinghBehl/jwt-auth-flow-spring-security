@@ -89,7 +89,7 @@ class AuthenticationServiceTest {
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.login(userLoginRequestDto));
 		assertThat(errorResponse.getMessage()).contains(errorMessage);
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(userRepository, times(1)).findByEmailId(emailId);
 	}
 
@@ -112,7 +112,7 @@ class AuthenticationServiceTest {
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.login(userLoginRequestDto));
 		assertThat(errorResponse.getMessage()).contains(errorMessage);
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(userRepository, times(1)).findByEmailId(emailId);
 		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
 	}
@@ -129,7 +129,7 @@ class AuthenticationServiceTest {
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.refreshToken(refreshTokenRequestDto));
 		assertThat(errorResponse.getMessage()).contains("Token expired");
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
 		verify(jwtUtility, times(1)).isTokenExpired(refreshToken);
 	}
 

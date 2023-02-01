@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -30,14 +31,14 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 
 	@ResponseBody
 	@ExceptionHandler(ResponseStatusException.class)
-	public ResponseEntity<?> responseStatusExceptionHandler(final ResponseStatusException exception) {
+	public ResponseEntity<?> responseStatusExceptionHandler(ResponseStatusException exception) {
 		log.error("Exception occured: {}", LocalDateTime.now(), exception);
-		return ResponseEntity.status(exception.getStatus()).body(new ExceptionResponseDto(exception.getMessage()));
+		return ResponseEntity.status(exception.getStatusCode()).body(new ExceptionResponseDto(exception.getMessage()));
 	}
 
 	@Override
-	protected ResponseEntity<Object> handleMethodArgumentNotValid(final MethodArgumentNotValidException exception,
-			final HttpHeaders headers, final HttpStatus status, final WebRequest request) {
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		BindingResult result = exception.getBindingResult();
 		List<FieldError> fieldErrors = result.getFieldErrors();
 
