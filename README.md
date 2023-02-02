@@ -1,5 +1,7 @@
-### Spring-security JWT Authorization flow : Reference POC
-##### [Application Link](http://jwt-auth-flow.hardiksinghbehl.com/swagger-ui.html) | Java Backend application using Spring-security to implement JWT based Authentication and Authorization
+### JWT Authorization flow using Spring Security
+
+##### A reference proof-of-concept that leverages Spring-security to implement JWT based Authentication and Authorization.
+##### 🛠 upgraded to Spring Boot 3 and Spring Security 6 🛠
 
 ### Important classes
 * [JwtAuthenticationFilter.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/filter/JwtAuthenticationFilter.java)
@@ -13,7 +15,7 @@ Any request to an endpoint that is specified to be authenticated will be interce
 
 Inside JwtAuthenticationFilter, the token from request header `Authorization` is extracted and decrypted, the corresponding user in database is fetched and is loaded onto the SecurityContextHolder object which signifies the current logged-in user for that HTTP request. The user details are added as part of custom claims in generated JWT. [refer [JwtUtility](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/utility/JwtUtility.java)]
 
-The secret key which is to be used for JWT generation and decryption, along with Access-token and Refresh-token validity can be specified in `application.properties` file corresponding to [JwtConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/properties/JwtConfigurationProperties.java)
+The secret key which is to be used for JWT generation and decryption, along with Access-token and Refresh-token validity can be specified in `application.properties` file corresponding to [JwtConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/properties/JwtConfigurationProperties.java). Below is a sample `.properties` file snippet that can be used to configure the required parameters.
 
 ```
 # JWT Configuration
@@ -22,44 +24,21 @@ com.behl.cerberus.jwt.access-token.validity=30
 com.behl.cerberus.jwt.refresh-token.validity=5
 ```
 
-
 ----
 
 ### Local Setup
 
-* Install Java 17 (recommended to use [SdkMan](https://sdkman.io))
+Run the below given commands in the projects base directory to create an image and start a container from the given `Dockerfile` 
 
 ```
-sdk install java 17-open
+docker build -t jwt-auth-flow-spring-security .
+```
+```
+docker container run -d -p 8080:8080 jwt-auth-flow-spring-security
 ```
 
-* Install Maven (recommended to use [SdkMan](https://sdkman.io))
+---
 
-```
-sdk install maven
-```
+### Demonstration screen recording
 
-* Clone the repo and run the below command in core
-
-```
-mvn clean install
-```
-
-* To start the application, run any of the below 2 commands
-
-```
-mvn spring-boot:run &
-```
-
-```
-java -jar /target/jwt-auth-flow-spring-security-0.0.1-SNAPSHOT.jar &
-```
-
-* Access the swagger-ui
-
-```
-http://localhost:8080/swagger-ui.html
-```
-
-### Demonstration Screen-record
 https://user-images.githubusercontent.com/69693621/177231299-5d927ea8-04f3-4cd4-935c-de88a8479d69.mov
