@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
+import com.behl.cerberus.dto.UserUpdationRequestDto;
 import com.behl.cerberus.security.utility.JwtUtility;
 import com.behl.cerberus.service.UserService;
 
@@ -40,6 +42,18 @@ public class UserController {
 			@Valid @RequestBody(required = true) final UserCreationRequestDto userCreationRequestDto) {
 		userService.create(userCreationRequestDto);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
+	}
+
+	@PatchMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Updates user account details", description = "Updates account details for the logged-in user")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "User account details updated successfully") })
+	@ResponseStatus(value = HttpStatus.OK)
+	public ResponseEntity<HttpStatus> userAccountDetailsUpdationHandler(
+			@Parameter(hidden = true) @RequestHeader(name = "Authorization", required = true) final String accessToken,
+			@Valid @RequestBody(required = true) final UserUpdationRequestDto userUpdationRequestDto) {
+		userService.update(jwtUtility.extractUserId(accessToken), userUpdationRequestDto);
+		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
