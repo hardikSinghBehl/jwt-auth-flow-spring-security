@@ -2,9 +2,9 @@ name: JWT based authentication and authorization using Spring security
 
 on:
   push:
-    branches: [ "main", "feature/*" ]
+    branches: [ "master", "feature/*" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build:
