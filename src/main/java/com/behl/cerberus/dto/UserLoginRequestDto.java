@@ -1,7 +1,5 @@
 package com.behl.cerberus.dto;
 
-import java.io.Serializable;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.Email;
@@ -13,9 +11,7 @@ import lombok.extern.jackson.Jacksonized;
 @Getter
 @Builder
 @Jacksonized
-public class UserLoginRequestDto implements Serializable {
-
-	private static final long serialVersionUID = -3243809542585061706L;
+public class UserLoginRequestDto {
 
 	@NotBlank(message = "email-id must not be empty")
 	@Email(message = "email-id must be of valid format")

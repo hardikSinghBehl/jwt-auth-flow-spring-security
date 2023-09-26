@@ -1,6 +1,5 @@
 package com.behl.cerberus.dto;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -15,9 +14,7 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TokenSuccessResponseDto implements Serializable {
-
-	private static final long serialVersionUID = -8752513311904244663L;
+public class TokenSuccessResponseDto {
 
 	private final String accessToken;
 	private final String refreshToken;
