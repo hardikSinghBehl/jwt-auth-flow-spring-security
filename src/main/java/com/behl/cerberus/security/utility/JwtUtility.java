@@ -13,7 +13,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import com.behl.cerberus.configuration.properties.JwtConfigurationProperties;
+import com.behl.cerberus.configuration.JwtConfigurationProperties;
 import com.behl.cerberus.entity.User;
 
 import io.jsonwebtoken.Claims;

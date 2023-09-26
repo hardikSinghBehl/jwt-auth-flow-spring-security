@@ -1,36 +1,47 @@
-package com.behl.cerberus.configuration.properties;
+package com.behl.cerberus.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "com.behl.cerberus")
-@Data
 public class JwtConfigurationProperties {
 
 	private JWT jwt = new JWT();
 
-	@Data
+	@Getter
+	@Setter
 	public class JWT {
+		
 		private String secretKey;
 		private AccessToken accessToken = new AccessToken();
 		private RefreshToken refreshToken = new RefreshToken();
 
-		@Data
+		@Getter
+		@Setter
 		public class AccessToken {
+			
 			/**
 			 * validity of access-token in minutes
 			 */
 			private Integer validity;
+			
 		}
 
-		@Data
+		@Getter
+		@Setter
 		public class RefreshToken {
+			
 			/**
 			 * validity of refresh-token in days
 			 */
 			private Integer validity;
+			
 		}
+		
 	}
 
 }
