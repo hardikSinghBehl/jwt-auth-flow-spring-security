@@ -21,7 +21,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.behl.cerberus.exception.dto.ExceptionResponseDto;
+import com.behl.cerberus.dto.ExceptionResponseDto;
 
 import lombok.extern.slf4j.Slf4j;
 

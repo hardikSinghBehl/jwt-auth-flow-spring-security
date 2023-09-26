@@ -1,15 +1,17 @@
-package com.behl.cerberus.exception.dto;
+package com.behl.cerberus.dto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.fasterxml.jackson.databind.annotation.JacksonStdImpl;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JacksonStdImpl
-@Data
 public class ExceptionResponseDto {
 
 	private final String status;
