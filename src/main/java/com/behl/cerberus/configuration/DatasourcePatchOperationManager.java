@@ -1,4 +1,4 @@
-package com.behl.cerberus.dto.mapper;
+package com.behl.cerberus.configuration;
 
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -12,7 +12,7 @@ import com.behl.cerberus.entity.User;
 import lombok.NonNull;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface UserPatchOperationMapper {
+public interface DatasourcePatchOperationManager {
 
 	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 	void patch(@NonNull UserUpdationRequestDto userUpdationRequestDto, @NonNull @MappingTarget User user);

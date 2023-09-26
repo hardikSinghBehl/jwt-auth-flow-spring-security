@@ -8,10 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.behl.cerberus.configuration.DatasourcePatchOperationManager;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
-import com.behl.cerberus.dto.mapper.UserPatchOperationMapper;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.repository.UserRepository;
 
@@ -40,7 +40,7 @@ public class UserService {
 
 	public void update(@NonNull final UUID userId, @NonNull UserUpdationRequestDto userUpdationRequestDto) {
 		final var user = getUserById(userId);
-		Mappers.getMapper(UserPatchOperationMapper.class).patch(userUpdationRequestDto, user);
+		Mappers.getMapper(DatasourcePatchOperationManager.class).patch(userUpdationRequestDto, user);
 		userRepository.save(user);
 	}
 
