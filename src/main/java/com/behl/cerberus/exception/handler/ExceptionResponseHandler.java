@@ -1,8 +1,5 @@
 package com.behl.cerberus.exception.handler;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,54 +7,48 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.behl.cerberus.dto.ExceptionResponseDto;
 
-import lombok.extern.slf4j.Slf4j;
-
 @ControllerAdvice
-@Slf4j
 public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 
 	@ResponseBody
 	@ExceptionHandler(ResponseStatusException.class)
-	public ResponseEntity<?> responseStatusExceptionHandler(ResponseStatusException exception) {
-		log.error("Exception occured: {}", LocalDateTime.now(), exception);
-		return ResponseEntity.status(exception.getStatusCode()).body(new ExceptionResponseDto(exception.getMessage()));
+	public ResponseEntity<?> responseStatusExceptionHandler(final ResponseStatusException exception) {
+		final var exceptionResponse = new ExceptionResponseDto<String>();
+		exceptionResponse.setStatus(exception.getStatusCode().toString());
+		exceptionResponse.setDescription(exception.getReason());
+		return ResponseEntity.status(exception.getStatusCode()).body(exceptionResponse);
 	}
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		BindingResult result = exception.getBindingResult();
-		List<FieldError> fieldErrors = result.getFieldErrors();
+		final var fieldErrors = exception.getBindingResult().getFieldErrors();
+		final var description = fieldErrors.stream().map(fieldError -> fieldError.getDefaultMessage()).collect(Collectors.toList());
+		
+		final var exceptionResponse = new ExceptionResponseDto<List<String>>();
+		exceptionResponse.setStatus(HttpStatus.BAD_REQUEST.toString());
+		exceptionResponse.setDescription(description);
 
-		final var response = new HashMap<>();
-		response.put("status", "Failure");
-		response.put("message",
-				fieldErrors.stream().map(fieldError -> fieldError.getDefaultMessage()).collect(Collectors.toList()));
-		response.put("timestamp",
-				LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toString());
-		return ResponseEntity.badRequest().body(response.toString());
+		return ResponseEntity.badRequest().body(exceptionResponse);
 	}
 
-	@ResponseStatus(value = HttpStatus.NOT_IMPLEMENTED)
 	@ResponseBody
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<?> serverExceptionHandler(Exception exception) {
-		log.error("Exception occured: {}", LocalDateTime.now(), exception);
-		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-				.body(new ExceptionResponseDto("Something went wrong."));
+	public ResponseEntity<?> serverExceptionHandler(final Exception exception) {
+		final var exceptionResponse = new ExceptionResponseDto<String>();
+		exceptionResponse.setStatus(HttpStatus.NOT_IMPLEMENTED.toString());
+		exceptionResponse.setDescription("Something went wrong.");
+		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(exceptionResponse);
 	}
 
 }

@@ -2,8 +2,9 @@ package com.behl.cerberus.dto;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -13,11 +14,11 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class TokenSuccessResponseDto {
 
-	private final String accessToken;
-	private final String refreshToken;
-	private final LocalDateTime expiresAt;
+	private String accessToken;
+	private String refreshToken;
+	private LocalDateTime expiresAt;
 
 }

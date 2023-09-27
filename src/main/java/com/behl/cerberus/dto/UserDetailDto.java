@@ -2,6 +2,9 @@ package com.behl.cerberus.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
@@ -9,11 +12,12 @@ import lombok.extern.jackson.Jacksonized;
 @Getter
 @Builder
 @Jacksonized
+@JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class UserDetailDto {
 
-	private final String firstName;
-	private final String lastName;
-	private final String emailId;
-	private final LocalDateTime createdAt;
+	private String firstName;
+	private String lastName;
+	private String emailId;
+	private LocalDateTime createdAt;
 
 }
