@@ -18,9 +18,8 @@ public class OpenApiConfiguration {
 
 	private final OpenApiConfigurationProperties openApiConfigurationProperties;
 	
-	private static final String SECURITY_COMPONENT_NAME = "AuthenticationBearer";	
+	private static final String SECURITY_COMPONENT_NAME = "Bearer Authentication";	
 	private static final String SECURITY_SCHEME = "Bearer";
-	private static final String SECURITY_BEARER_FORMAT = "JWT";
 
 	@Bean
 	public OpenAPI customOpenAPI() {
@@ -34,8 +33,7 @@ public class OpenApiConfiguration {
 			        .addSecuritySchemes(SECURITY_COMPONENT_NAME,
 			            new SecurityScheme()
 			                .type(SecurityScheme.Type.HTTP)
-			                .scheme(SECURITY_SCHEME)
-			                .bearerFormat(SECURITY_BEARER_FORMAT))
+			                .scheme(SECURITY_SCHEME))
 			    )
 			    .addSecurityItem(new SecurityRequirement().addList(SECURITY_COMPONENT_NAME));
 	}
