@@ -11,7 +11,7 @@ public class ApiPathExclusion {
 	@RequiredArgsConstructor
 	public enum GetApiPathExclusion {
 	
-		SWAGGER_UI("/swagger-ui/**"), SWAGGER_API_V3_DOCS("/v3/api-docs/**");
+		SWAGGER_UI("/swagger-ui**/**"), SWAGGER_API_V3_DOCS("/v3/api-docs**/**");
 		
 		private final String path;
 
