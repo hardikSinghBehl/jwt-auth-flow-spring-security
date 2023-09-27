@@ -19,28 +19,6 @@ public class OpenApiConfigurationProperties {
 		private String title;
 		private String description;
 		private String apiVersion;
-		private Contact contact = new Contact();
-		private Security security = new Security();
-
-		@Getter
-		@Setter
-		public class Contact {
-			
-			private String email;
-			private String name;
-			private String url;
-			
-		}
-
-		@Getter
-		@Setter
-		public class Security {
-			
-			private String name;
-			private String scheme;
-			private String bearerFormat;
-			
-		}
 		
 	}
 

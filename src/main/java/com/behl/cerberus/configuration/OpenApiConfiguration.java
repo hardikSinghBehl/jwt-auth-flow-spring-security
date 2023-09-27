@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -18,20 +17,27 @@ import lombok.RequiredArgsConstructor;
 public class OpenApiConfiguration {
 
 	private final OpenApiConfigurationProperties openApiConfigurationProperties;
+	
+	private static final String SECURITY_COMPONENT_NAME = "AuthenticationBearer";	
+	private static final String SECURITY_SCHEME = "Bearer";
+	private static final String SECURITY_BEARER_FORMAT = "JWT";
 
 	@Bean
 	public OpenAPI customOpenAPI() {
 		final var properties = openApiConfigurationProperties.getOpenApi();
-		final var security = properties.getSecurity();
-		final var contact = properties.getContact();
 		final var info = new Info().title(properties.getTitle()).version(properties.getApiVersion())
-				.description(properties.getDescription())
-				.contact(new Contact().email(contact.getEmail()).name(contact.getName()).url(contact.getUrl()));
+				.description(properties.getDescription());
 
-		return new OpenAPI().info(info).addSecurityItem(new SecurityRequirement().addList(security.getName()))
-				.components(new Components().addSecuritySchemes(security.getName(),
-						new SecurityScheme().name(security.getName()).type(SecurityScheme.Type.HTTP)
-								.scheme(security.getScheme()).bearerFormat(security.getBearerFormat())));
+		return new OpenAPI()
+			    .info(info)
+			    .components(new Components()
+			        .addSecuritySchemes(SECURITY_COMPONENT_NAME,
+			            new SecurityScheme()
+			                .type(SecurityScheme.Type.HTTP)
+			                .scheme(SECURITY_SCHEME)
+			                .bearerFormat(SECURITY_BEARER_FORMAT))
+			    )
+			    .addSecurityItem(new SecurityRequirement().addList(SECURITY_COMPONENT_NAME));
 	}
 	
 }
