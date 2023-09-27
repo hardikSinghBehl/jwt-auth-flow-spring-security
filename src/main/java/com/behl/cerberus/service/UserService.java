@@ -3,16 +3,15 @@ package com.behl.cerberus.service;
 import java.util.UUID;
 
 import org.mapstruct.factory.Mappers;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.behl.cerberus.configuration.DatasourcePatchOperationManager;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
 import com.behl.cerberus.entity.User;
+import com.behl.cerberus.exception.AccountAlreadyExistsException;
 import com.behl.cerberus.repository.UserRepository;
 
 import lombok.NonNull;
@@ -26,14 +25,18 @@ public class UserService {
 	private final PasswordEncoder passwordEncoder;
 
 	public void create(@NonNull final UserCreationRequestDto userCreationRequestDto) {
-		if (emailAlreadyTaken(userCreationRequestDto.getEmailId()))
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Account with provided email-id already exists");
-
+		final var emailId = userCreationRequestDto.getEmailId();
+		final var userAccountExistsWithEmailId = userRepository.existsByEmailId(emailId);
+		if (Boolean.TRUE.equals(userAccountExistsWithEmailId)) {
+			throw new AccountAlreadyExistsException("Account with provided email-id already exists");
+		}
+		
 		final var user = new User();
+		final var encodedPassword = passwordEncoder.encode(userCreationRequestDto.getPassword());
 		user.setFirstName(userCreationRequestDto.getFirstName());
 		user.setLastName(userCreationRequestDto.getLastName());
 		user.setEmailId(userCreationRequestDto.getEmailId());
-		user.setPassword(passwordEncoder.encode(userCreationRequestDto.getPassword()));
+		user.setPassword(encodedPassword);
 
 		userRepository.save(user);
 	}
@@ -51,12 +54,7 @@ public class UserService {
 	}
 
 	private User getUserById(@NonNull final UUID userId) {
-		return userRepository.findById(userId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid user-id provided"));
-	}
-
-	private boolean emailAlreadyTaken(@NonNull final String emailId) {
-		return userRepository.existsByEmailId(emailId);
+		return userRepository.findById(userId).orElseThrow(IllegalStateException::new);
 	}
 
 }

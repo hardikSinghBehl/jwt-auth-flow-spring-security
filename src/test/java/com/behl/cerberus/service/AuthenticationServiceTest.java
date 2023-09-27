@@ -129,7 +129,7 @@ class AuthenticationServiceTest {
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.refreshToken(refreshTokenRequestDto));
 		assertThat(errorResponse.getMessage()).contains("Token expired");
-		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(jwtUtility, times(1)).isTokenExpired(refreshToken);
 	}
 

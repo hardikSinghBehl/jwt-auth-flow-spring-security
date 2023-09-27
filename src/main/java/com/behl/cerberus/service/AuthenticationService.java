@@ -1,15 +1,13 @@
 package com.behl.cerberus.service;
 
-import java.util.UUID;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
+import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.TokenExpiredException;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.security.utility.JwtUtility;
 
@@ -26,10 +24,14 @@ public class AuthenticationService {
 
 	public TokenSuccessResponseDto login(@NonNull final UserLoginRequestDto userLoginRequestDto) {
 		final var user = userRepository.findByEmailId(userLoginRequestDto.getEmailId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials provided"));
+				.orElseThrow(InvalidLoginCredentialsException::new);
 
-		if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword()))
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials provided");
+		final var encodedPassword = user.getPassword();
+		final var plainTextPassword = userLoginRequestDto.getPassword();
+		final var isCorrectPassword = passwordEncoder.matches(plainTextPassword, encodedPassword);
+		if (Boolean.FALSE.equals(isCorrectPassword)) {
+			throw new InvalidLoginCredentialsException();
+		}
 
 		final var accessToken = jwtUtility.generateAccessToken(user);
 		final var refreshToken = jwtUtility.generateRefreshToken(user);
@@ -40,13 +42,13 @@ public class AuthenticationService {
 	}
 
 	public TokenSuccessResponseDto refreshToken(@NonNull final RefreshTokenRequestDto refreshTokenRequestDto) {
+		final var isRefreshTokenExpired = jwtUtility.isTokenExpired(refreshTokenRequestDto.getRefreshToken());
+		if (Boolean.TRUE.equals(isRefreshTokenExpired)) {
+			throw new TokenExpiredException();
+		}
 
-		if (jwtUtility.isTokenExpired(refreshTokenRequestDto.getRefreshToken()))
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token expired");
-
-		final UUID userId = jwtUtility.extractUserId(refreshTokenRequestDto.getRefreshToken());
-		final var user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user-id provided"));
+		final var userId = jwtUtility.extractUserId(refreshTokenRequestDto.getRefreshToken());
+		final var user = userRepository.findById(userId).orElseThrow(IllegalStateException::new);
 
 		final var accessToken = jwtUtility.generateAccessToken(user);
 		final var accessTokenExpirationTimestamp = jwtUtility.extractExpirationTimestamp(accessToken);

@@ -1,4 +1,4 @@
-package com.behl.cerberus.exception.handler;
+package com.behl.cerberus.exception;
 
 import java.util.List;
 import java.util.stream.Collectors;
