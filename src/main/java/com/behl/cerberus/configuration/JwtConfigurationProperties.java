@@ -24,9 +24,9 @@ public class JwtConfigurationProperties {
 		@Setter
 		public class AccessToken {
 			
-			/**
-			 * validity of access-token in minutes
-			 */
+		    /**
+		     * The validity period of access token(s) in minutes.
+		     */
 			private Integer validity;
 			
 		}
@@ -35,9 +35,9 @@ public class JwtConfigurationProperties {
 		@Setter
 		public class RefreshToken {
 			
-			/**
-			 * validity of refresh-token in days
-			 */
+		    /**
+		     * The validity period of refresh token(s) in minutes.
+		     */
 			private Integer validity;
 			
 		}
