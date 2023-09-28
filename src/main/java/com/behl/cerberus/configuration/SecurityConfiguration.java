@@ -1,6 +1,8 @@
 package com.behl.cerberus.configuration;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -30,9 +32,9 @@ public class SecurityConfiguration {
 	@Bean
 	@SneakyThrows
 	public SecurityFilterChain configure(final HttpSecurity http)  {
-		final var unsecuredGetEndpoints = apiPathExclusionConfigurationProperties.getGet();
-		final var unsecuredPostEndpoints = apiPathExclusionConfigurationProperties.getPost();
-		final var unsecuredPutEndpoints = apiPathExclusionConfigurationProperties.getPut();
+		final var unsecuredGetEndpoints = Optional.ofNullable(apiPathExclusionConfigurationProperties.getGet()).orElseGet(ArrayList::new);
+		final var unsecuredPostEndpoints = Optional.ofNullable(apiPathExclusionConfigurationProperties.getPost()).orElseGet(ArrayList::new);
+		final var unsecuredPutEndpoints = Optional.ofNullable(apiPathExclusionConfigurationProperties.getPut()).orElseGet(ArrayList::new);
 		
 		if (Boolean.TRUE.equals(apiPathExclusionConfigurationProperties.isSwaggerV3())) {
 			unsecuredGetEndpoints.addAll(SWAGGER_V3_PATHS);
