@@ -1,6 +1,7 @@
 package com.behl.cerberus.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.behl.cerberus.configuration.JwtConfigurationProperties;
+import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT;
+import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT.RefreshToken;
 import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
@@ -26,17 +30,22 @@ import com.behl.cerberus.utility.JwtUtility;
 
 class AuthenticationServiceTest {
 
-	private AuthenticationService authenticationService;
+	private JwtUtility jwtUtility;
+	private CacheService cacheService;
 	private UserRepository userRepository;
 	private PasswordEncoder passwordEncoder;
-	private JwtUtility jwtUtility;
+	private JwtConfigurationProperties jwtConfigurationProperties;
+	
+	private AuthenticationService authenticationService;
 
 	@BeforeEach
 	void setUp() {
+		this.jwtUtility = mock(JwtUtility.class);
+		this.cacheService = mock(CacheService.class);
 		this.userRepository = mock(UserRepository.class);
 		this.passwordEncoder = mock(PasswordEncoder.class);
-		this.jwtUtility = mock(JwtUtility.class);
-		this.authenticationService = new AuthenticationService(userRepository, passwordEncoder, jwtUtility);
+		this.jwtConfigurationProperties = mock(JwtConfigurationProperties.class);
+		this.authenticationService = new AuthenticationService(jwtUtility, cacheService, userRepository, passwordEncoder, jwtConfigurationProperties);
 	}
 
 	@Test
@@ -54,12 +63,16 @@ class AuthenticationServiceTest {
 		when(userLoginRequestDto.getEmailId()).thenReturn(emailId);
 		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
 		when(passwordEncoder.matches(rawPassword, encryptedPassword)).thenReturn(true);
+		
+		final var jwtProperties = mock(JWT.class);
+		final var refreshTokenProperties = mock(RefreshToken.class);
+		when(jwtConfigurationProperties.getJwt()).thenReturn(jwtProperties);
+		when(jwtProperties.getRefreshToken()).thenReturn(refreshTokenProperties);
+		when(refreshTokenProperties.getValidity()).thenReturn(20);
 
 		final String accessToken = "Access token JWT";
-		final String refreshToken = "Refresh token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
-		when(jwtUtility.generateRefreshToken(userId)).thenReturn(refreshToken);
 		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 
 		// Call
@@ -69,11 +82,9 @@ class AuthenticationServiceTest {
 		assertThat(response).isNotNull();
 		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
-		assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
 		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
 		verify(userRepository, times(1)).findByEmailId(emailId);
 		verify(jwtUtility, times(1)).generateAccessToken(userId);
-		verify(jwtUtility, times(1)).generateRefreshToken(userId);
 		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
 		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
 	}
@@ -125,14 +136,14 @@ class AuthenticationServiceTest {
 		final String refreshToken = "Refresh token JWT";
 		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
 		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
-		when(jwtUtility.isTokenExpired(refreshToken)).thenReturn(true);
+		when(cacheService.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.empty());
 
 		// Call and Verify
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.refreshToken(refreshTokenRequestDto));
-		assertThat(errorResponse.getMessage()).contains("Token expired");
+		assertThat(errorResponse.getReason()).isEqualTo("Token expired");
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(jwtUtility, times(1)).isTokenExpired(refreshToken);
+		verify(cacheService, times(1)).fetch(eq(refreshToken), eq(UUID.class));
 	}
 
 	@Test
@@ -142,8 +153,7 @@ class AuthenticationServiceTest {
 		final UUID userId = UUID.randomUUID();
 		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
 		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
-		when(jwtUtility.isTokenExpired(refreshToken)).thenReturn(false);
-		when(jwtUtility.extractUserId(refreshToken)).thenReturn(userId);
+		when(cacheService.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
 		final String accessToken = "Access token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
@@ -158,10 +168,7 @@ class AuthenticationServiceTest {
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
 		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
 		verify(jwtUtility, times(1)).generateAccessToken(userId);
-		verify(jwtUtility, times(0)).generateRefreshToken(userId);
 		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
-		verify(jwtUtility, times(1)).isTokenExpired(refreshToken);
-		verify(jwtUtility, times(1)).extractUserId(refreshToken);
 	}
 
 }
