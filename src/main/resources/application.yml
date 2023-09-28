@@ -11,6 +11,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  data:
+    redis:
+      host: ${REDIS_HOSTNAME}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
     
 com:
   behl:
@@ -25,10 +30,10 @@ com:
             - /auth/refresh
       jwt:
         secret-key: 093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
-        refresh-token:
-          validity: 5
         access-token:
           validity: 30
+        refresh-token:
+          validity: 120
       open-api:
         api-version: 1.0.0
         title: Cerberus
