@@ -4,14 +4,13 @@ spring:
   application:
     name: cerberus
   datasource:
-    driverClassName: org.h2.Driver
-    password: cerberus
-    username: cerberus
-    url: jdbc:h2:mem:cerberus
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
+      ddl-auto: update
     
 com:
   behl:
