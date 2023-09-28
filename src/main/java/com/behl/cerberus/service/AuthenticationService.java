@@ -14,6 +14,7 @@ import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.InvalidLoginCredentialsException;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.repository.UserRepository;
+import com.behl.cerberus.utility.CacheManager;
 import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenGenerator;
 
@@ -26,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthenticationService {
 
 	private final JwtUtility jwtUtility;
-	private final CacheService cacheService;
+	private final CacheManager cacheManager;
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenGenerator refreshTokenGenerator;
@@ -49,7 +50,7 @@ public class AuthenticationService {
 		
 		final var refreshToken = refreshTokenGenerator.generate();
 		final var refreshTokenValidity = jwtConfigurationProperties.getJwt().getRefreshToken().getValidity();
-		cacheService.save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
+		cacheManager.save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).refreshToken(refreshToken)
 				.expiresAt(accessTokenExpirationTimestamp).build();
@@ -57,7 +58,7 @@ public class AuthenticationService {
 
 	public TokenSuccessResponseDto refreshToken(@NonNull final RefreshTokenRequestDto refreshTokenRequestDto) {
 		final var refreshToken = refreshTokenRequestDto.getRefreshToken();
-		final var userId = cacheService.fetch(refreshToken, UUID.class).orElseThrow(TokenVerificationException::new);
+		final var userId = cacheManager.fetch(refreshToken, UUID.class).orElseThrow(TokenVerificationException::new);
 
 		final var accessToken = jwtUtility.generateAccessToken(userId);
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);

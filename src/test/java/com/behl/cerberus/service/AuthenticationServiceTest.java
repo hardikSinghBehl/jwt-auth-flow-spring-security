@@ -26,13 +26,14 @@ import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.repository.UserRepository;
+import com.behl.cerberus.utility.CacheManager;
 import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenGenerator;
 
 class AuthenticationServiceTest {
 
 	private JwtUtility jwtUtility;
-	private CacheService cacheService;
+	private CacheManager cacheManager;
 	private UserRepository userRepository;
 	private PasswordEncoder passwordEncoder;
 	private RefreshTokenGenerator refreshTokenGenerator;
@@ -43,12 +44,12 @@ class AuthenticationServiceTest {
 	@BeforeEach
 	void setUp() {
 		this.jwtUtility = mock(JwtUtility.class);
-		this.cacheService = mock(CacheService.class);
+		this.cacheManager = mock(CacheManager.class);
 		this.userRepository = mock(UserRepository.class);
 		this.passwordEncoder = mock(PasswordEncoder.class);
 		this.refreshTokenGenerator = mock(RefreshTokenGenerator.class);
 		this.jwtConfigurationProperties = mock(JwtConfigurationProperties.class);
-		this.authenticationService = new AuthenticationService(jwtUtility, cacheService, userRepository, passwordEncoder, refreshTokenGenerator, jwtConfigurationProperties);
+		this.authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, jwtConfigurationProperties);
 	}
 
 	@Test
@@ -143,14 +144,14 @@ class AuthenticationServiceTest {
 		final String refreshToken = "Refresh token JWT";
 		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
 		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
-		when(cacheService.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.empty());
+		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.empty());
 
 		// Call and Verify
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.refreshToken(refreshTokenRequestDto));
 		assertThat(errorResponse.getReason()).isEqualTo("Authentication failure: Token missing, invalid, or expired");
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(cacheService, times(1)).fetch(eq(refreshToken), eq(UUID.class));
+		verify(cacheManager, times(1)).fetch(eq(refreshToken), eq(UUID.class));
 	}
 
 	@Test
@@ -160,7 +161,7 @@ class AuthenticationServiceTest {
 		final UUID userId = UUID.randomUUID();
 		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
 		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
-		when(cacheService.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
+		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
 		final String accessToken = "Access token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
