@@ -1,8 +1,7 @@
 package com.behl.cerberus.entity;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -12,24 +11,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "users")
-public class User implements Serializable {
-
-	private static final long serialVersionUID = 5514526011795248312L;
+public class User {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	@Column(name = "id", unique = true, nullable = false)
+	@Column(name = "id", nullable = false, unique = true)
 	private UUID id;
 
 	@Column(name = "first_name", nullable = false)
 	private String firstName;
 
-	@Column(name = "last_name", nullable = true)
+	@Column(name = "last_name")
 	private String lastName;
 
 	@Column(name = "email_id", nullable = false, unique = true)
@@ -44,7 +43,7 @@ public class User implements Serializable {
 	@PrePersist
 	void onCreate() {
 		this.id = UUID.randomUUID();
-		this.createdAt = LocalDateTime.now(ZoneId.of("+00:00"));
+		this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
 	}
 
 }
