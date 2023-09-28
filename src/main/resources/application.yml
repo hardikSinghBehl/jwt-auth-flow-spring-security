@@ -29,7 +29,7 @@ com:
           put: 
             - /auth/refresh
       jwt:
-        secret-key: 093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
+        secret-key: ${JWT_SECRET_KEY}
         access-token:
           validity: 30
         refresh-token:
