@@ -12,7 +12,7 @@ import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.InvalidLoginCredentialsException;
-import com.behl.cerberus.exception.TokenExpiredException;
+import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenGenerator;
@@ -57,7 +57,7 @@ public class AuthenticationService {
 
 	public TokenSuccessResponseDto refreshToken(@NonNull final RefreshTokenRequestDto refreshTokenRequestDto) {
 		final var refreshToken = refreshTokenRequestDto.getRefreshToken();
-		final var userId = cacheService.fetch(refreshToken, UUID.class).orElseThrow(TokenExpiredException::new);
+		final var userId = cacheService.fetch(refreshToken, UUID.class).orElseThrow(TokenVerificationException::new);
 
 		final var accessToken = jwtUtility.generateAccessToken(userId);
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);

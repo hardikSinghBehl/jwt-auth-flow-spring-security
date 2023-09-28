@@ -26,6 +26,7 @@ import lombok.SneakyThrows;
 public class SecurityConfiguration {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final ApiPathExclusionConfigurationProperties apiPathExclusionConfigurationProperties;
 	private static final List<String> SWAGGER_V3_PATHS = List.of("/swagger-ui**/**", "/v3/api-docs**/**");
 
@@ -43,6 +44,7 @@ public class SecurityConfiguration {
 		http
 			.cors(corsConfigurer -> corsConfigurer.disable())
 			.csrf(csrfConfigurer -> csrfConfigurer.disable())
+			.exceptionHandling(exceptionConfigurer -> exceptionConfigurer.authenticationEntryPoint(customAuthenticationEntryPoint))
 			.sessionManagement(sessionConfigurer -> sessionConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(authManager -> {
 					authManager
