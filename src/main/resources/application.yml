@@ -1,0 +1,36 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: cerberus
+  datasource:
+    driverClassName: org.h2.Driver
+    password: cerberus
+    username: cerberus
+    url: jdbc:h2:mem:cerberus
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    
+com:
+  behl:
+    cerberus:
+      unsecured:
+        api-path:
+          swagger-v3: true
+          post:
+            - /users
+            - /auth/login
+          put: 
+            - /auth/refresh
+      jwt:
+        secret-key: 093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
+        refresh-token:
+          validity: 5
+        access-token:
+          validity: 30
+      open-api:
+        api-version: 1.0.0
+        title: Cerberus
+        description: Java Backend application using Spring-security to implement JWT based Authentication and Authorization
