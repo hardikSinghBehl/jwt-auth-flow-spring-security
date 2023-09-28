@@ -29,7 +29,7 @@ public class SecurityConfiguration {
 
 	@Bean
 	@SneakyThrows
-	public SecurityFilterChain configure(HttpSecurity http)  {
+	public SecurityFilterChain configure(final HttpSecurity http)  {
 		final var unsecuredGetEndpoints = apiPathExclusionConfigurationProperties.getGet();
 		final var unsecuredPostEndpoints = apiPathExclusionConfigurationProperties.getPost();
 		final var unsecuredPutEndpoints = apiPathExclusionConfigurationProperties.getPut();
@@ -39,10 +39,9 @@ public class SecurityConfiguration {
 		}
 		
 		http
-			.cors().and()
-			.csrf().disable()
-			.exceptionHandling().and()
-			.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+			.cors(corsConfigurer -> corsConfigurer.disable())
+			.csrf(csrfConfigurer -> csrfConfigurer.disable())
+			.sessionManagement(sessionConfigurer -> sessionConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(authManager -> {
 					authManager
 						.requestMatchers(HttpMethod.GET, unsecuredGetEndpoints.toArray(String[]::new)).permitAll()
