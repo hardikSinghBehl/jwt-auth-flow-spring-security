@@ -12,7 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.behl.cerberus.security.filter.JwtAuthenticationFilter;
+import com.behl.cerberus.filter.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

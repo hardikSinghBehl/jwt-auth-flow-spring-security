@@ -22,7 +22,7 @@ import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.repository.UserRepository;
-import com.behl.cerberus.security.utility.JwtUtility;
+import com.behl.cerberus.utility.JwtUtility;
 
 class AuthenticationServiceTest {
 
@@ -45,8 +45,10 @@ class AuthenticationServiceTest {
 		final String encryptedPassword = "blablabla";
 		final String rawPassword = "secret";
 		final String emailId = "hehe@hoho.com";
+		final UUID userId = UUID.randomUUID();
 		var user = mock(User.class);
 		var userLoginRequestDto = mock(UserLoginRequestDto.class);
+		when(user.getId()).thenReturn(userId);
 		when(user.getPassword()).thenReturn(encryptedPassword);
 		when(userLoginRequestDto.getPassword()).thenReturn(rawPassword);
 		when(userLoginRequestDto.getEmailId()).thenReturn(emailId);
@@ -56,9 +58,9 @@ class AuthenticationServiceTest {
 		final String accessToken = "Access token JWT";
 		final String refreshToken = "Refresh token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
-		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-		when(jwtUtility.generateRefreshToken(user)).thenReturn(refreshToken);
-		when(jwtUtility.extractExpirationTimestamp(accessToken)).thenReturn(expirationTime);
+		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
+		when(jwtUtility.generateRefreshToken(userId)).thenReturn(refreshToken);
+		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 
 		// Call
 		final var response = authenticationService.login(userLoginRequestDto);
@@ -70,9 +72,9 @@ class AuthenticationServiceTest {
 		assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
 		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
 		verify(userRepository, times(1)).findByEmailId(emailId);
-		verify(jwtUtility, times(1)).generateAccessToken(user);
-		verify(jwtUtility, times(1)).generateRefreshToken(user);
-		verify(jwtUtility, times(1)).extractExpirationTimestamp(accessToken);
+		verify(jwtUtility, times(1)).generateAccessToken(userId);
+		verify(jwtUtility, times(1)).generateRefreshToken(userId);
+		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
 		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
 	}
 
@@ -137,17 +139,15 @@ class AuthenticationServiceTest {
 	void tokenRefreshalSuccess() {
 		// Prepare
 		final String refreshToken = "Refresh token JWT";
-		final UUID userId = UUID.fromString("304227a6-5938-4bbc-9c3c-a13520372abc");
-		var user = mock(User.class);
+		final UUID userId = UUID.randomUUID();
 		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
 		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
 		when(jwtUtility.isTokenExpired(refreshToken)).thenReturn(false);
 		when(jwtUtility.extractUserId(refreshToken)).thenReturn(userId);
-		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 		final String accessToken = "Access token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
-		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-		when(jwtUtility.extractExpirationTimestamp(accessToken)).thenReturn(expirationTime);
+		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
+		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 
 		// Call
 		final var response = authenticationService.refreshToken(refreshTokenRequestDto);
@@ -157,9 +157,9 @@ class AuthenticationServiceTest {
 		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
 		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
-		verify(jwtUtility, times(1)).generateAccessToken(user);
-		verify(jwtUtility, times(0)).generateRefreshToken(user);
-		verify(jwtUtility, times(1)).extractExpirationTimestamp(accessToken);
+		verify(jwtUtility, times(1)).generateAccessToken(userId);
+		verify(jwtUtility, times(0)).generateRefreshToken(userId);
+		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
 		verify(jwtUtility, times(1)).isTokenExpired(refreshToken);
 		verify(jwtUtility, times(1)).extractUserId(refreshToken);
 	}
