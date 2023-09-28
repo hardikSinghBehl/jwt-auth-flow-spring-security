@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
-import com.behl.cerberus.security.utility.JwtUtility;
 import com.behl.cerberus.service.UserService;
+import com.behl.cerberus.utility.JwtUtility;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

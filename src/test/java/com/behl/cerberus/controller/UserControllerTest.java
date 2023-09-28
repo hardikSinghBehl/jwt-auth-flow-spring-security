@@ -18,8 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
-import com.behl.cerberus.security.utility.JwtUtility;
 import com.behl.cerberus.service.UserService;
+import com.behl.cerberus.utility.JwtUtility;
 
 class UserControllerTest {
 

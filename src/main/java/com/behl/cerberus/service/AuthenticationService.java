@@ -9,7 +9,7 @@ import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.InvalidLoginCredentialsException;
 import com.behl.cerberus.exception.TokenExpiredException;
 import com.behl.cerberus.repository.UserRepository;
-import com.behl.cerberus.security.utility.JwtUtility;
+import com.behl.cerberus.utility.JwtUtility;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +33,10 @@ public class AuthenticationService {
 			throw new InvalidLoginCredentialsException();
 		}
 
-		final var accessToken = jwtUtility.generateAccessToken(user);
-		final var refreshToken = jwtUtility.generateRefreshToken(user);
-		final var accessTokenExpirationTimestamp = jwtUtility.extractExpirationTimestamp(accessToken);
+		final var userId = user.getId();
+		final var accessToken = jwtUtility.generateAccessToken(userId);
+		final var refreshToken = jwtUtility.generateRefreshToken(userId);
+		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).refreshToken(refreshToken)
 				.expiresAt(accessTokenExpirationTimestamp).build();
@@ -48,10 +49,8 @@ public class AuthenticationService {
 		}
 
 		final var userId = jwtUtility.extractUserId(refreshTokenRequestDto.getRefreshToken());
-		final var user = userRepository.findById(userId).orElseThrow(IllegalStateException::new);
-
-		final var accessToken = jwtUtility.generateAccessToken(user);
-		final var accessTokenExpirationTimestamp = jwtUtility.extractExpirationTimestamp(accessToken);
+		final var accessToken = jwtUtility.generateAccessToken(userId);
+		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).expiresAt(accessTokenExpirationTimestamp)
 				.build();
