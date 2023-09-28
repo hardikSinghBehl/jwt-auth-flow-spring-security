@@ -36,15 +36,20 @@ public class JwtUtility {
 		final var audience = extractClaim(token, Claims::getAudience);
 		return UUID.fromString(audience);
 	}
-
-	public String generateAccessToken(@NonNull final UUID userId) {
+	
+	public String generateAccessToken(final UUID userId) {
 		final var accessTokenValidity = jwtConfigurationProperties.getJwt().getAccessToken().getValidity();
-		return createToken(userId, TimeUnit.MINUTES.toMillis(accessTokenValidity));
-	}
-
-	public String generateRefreshToken(@NonNull final UUID userId) {
-		final var refreshTokenValidity = jwtConfigurationProperties.getJwt().getRefreshToken().getValidity();
-		return createToken(userId, TimeUnit.DAYS.toMillis(refreshTokenValidity));
+		final var expiration = TimeUnit.MINUTES.toMillis(accessTokenValidity);
+		final var secretKey = jwtConfigurationProperties.getJwt().getSecretKey();
+		final var currentTimestamp = new Date(System.currentTimeMillis());
+		final var expirationTimestamp = new Date(System.currentTimeMillis() + expiration);
+		
+		return Jwts.builder()
+				.setIssuer(issuer)
+				.setIssuedAt(currentTimestamp)
+				.setExpiration(expirationTimestamp)
+				.setAudience(String.valueOf(userId))
+				.signWith(SignatureAlgorithm.HS256, secretKey).compact();
 	}
 
 	public Boolean validateToken(@NonNull final String token, @NonNull final UUID userId) {
@@ -67,19 +72,6 @@ public class JwtUtility {
 		final var santizedToken = token.replace(BEARER_PREFIX, StringUtils.EMPTY);
 		final var claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(santizedToken).getBody();
 		return claimsResolver.apply(claims);
-	}
-
-	private String createToken(final UUID userId, final Long expiration) {
-		final var secretKey = jwtConfigurationProperties.getJwt().getSecretKey();
-		final var currentTimestamp = new Date(System.currentTimeMillis());
-		final var expirationTimestamp = new Date(System.currentTimeMillis() + expiration);
-		
-		return Jwts.builder()
-				.setIssuer(issuer)
-				.setIssuedAt(currentTimestamp)
-				.setExpiration(expirationTimestamp)
-				.setAudience(String.valueOf(userId))
-				.signWith(SignatureAlgorithm.HS256, secretKey).compact();
 	}
 
 }
