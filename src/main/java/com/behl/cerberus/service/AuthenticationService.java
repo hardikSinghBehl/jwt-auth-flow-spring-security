@@ -29,6 +29,7 @@ public class AuthenticationService {
 	private final CacheService cacheService;
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final RefreshTokenGenerator refreshTokenGenerator;
 	private final JwtConfigurationProperties jwtConfigurationProperties;
 
 	public TokenSuccessResponseDto login(@NonNull final UserLoginRequestDto userLoginRequestDto) {
@@ -46,7 +47,7 @@ public class AuthenticationService {
 		final var accessToken = jwtUtility.generateAccessToken(userId);
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 		
-		final var refreshToken = RefreshTokenGenerator.generate();
+		final var refreshToken = refreshTokenGenerator.generate();
 		final var refreshTokenValidity = jwtConfigurationProperties.getJwt().getRefreshToken().getValidity();
 		cacheService.save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
 

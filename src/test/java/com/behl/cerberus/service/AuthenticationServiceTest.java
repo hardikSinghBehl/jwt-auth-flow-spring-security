@@ -27,6 +27,7 @@ import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.JwtUtility;
+import com.behl.cerberus.utility.RefreshTokenGenerator;
 
 class AuthenticationServiceTest {
 
@@ -34,6 +35,7 @@ class AuthenticationServiceTest {
 	private CacheService cacheService;
 	private UserRepository userRepository;
 	private PasswordEncoder passwordEncoder;
+	private RefreshTokenGenerator refreshTokenGenerator;
 	private JwtConfigurationProperties jwtConfigurationProperties;
 	
 	private AuthenticationService authenticationService;
@@ -44,8 +46,9 @@ class AuthenticationServiceTest {
 		this.cacheService = mock(CacheService.class);
 		this.userRepository = mock(UserRepository.class);
 		this.passwordEncoder = mock(PasswordEncoder.class);
+		this.refreshTokenGenerator = mock(RefreshTokenGenerator.class);
 		this.jwtConfigurationProperties = mock(JwtConfigurationProperties.class);
-		this.authenticationService = new AuthenticationService(jwtUtility, cacheService, userRepository, passwordEncoder, jwtConfigurationProperties);
+		this.authenticationService = new AuthenticationService(jwtUtility, cacheService, userRepository, passwordEncoder, refreshTokenGenerator, jwtConfigurationProperties);
 	}
 
 	@Test
@@ -70,10 +73,12 @@ class AuthenticationServiceTest {
 		when(jwtProperties.getRefreshToken()).thenReturn(refreshTokenProperties);
 		when(refreshTokenProperties.getValidity()).thenReturn(20);
 
-		final String accessToken = "Access token JWT";
+		final String accessToken = "test-refresh-token";
+		final String refreshToken = "test-refresh-token";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(userId)).thenReturn(accessToken);
 		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
+		when(refreshTokenGenerator.generate()).thenReturn(refreshToken);
 
 		// Call
 		final var response = authenticationService.login(userLoginRequestDto);
@@ -83,9 +88,11 @@ class AuthenticationServiceTest {
 		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
 		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
+		assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
 		verify(userRepository, times(1)).findByEmailId(emailId);
 		verify(jwtUtility, times(1)).generateAccessToken(userId);
 		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
+		verify(refreshTokenGenerator, times(1)).generate();
 		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
 	}
 
