@@ -11,6 +11,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  data:
+    redis:
+      host: ${REDIS_HOSTNAME}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
     
 com:
   behl:
