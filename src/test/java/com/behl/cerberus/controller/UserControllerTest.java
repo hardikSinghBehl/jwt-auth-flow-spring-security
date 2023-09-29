@@ -19,19 +19,20 @@ import org.springframework.web.server.ResponseStatusException;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.service.UserService;
-import com.behl.cerberus.utility.JwtUtility;
+import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 
 class UserControllerTest {
 
-	private UserController userController;
 	private UserService userService;
-	private JwtUtility jwtUtility;
+	private AuthenticatedUserIdProvider authenticatedUserIdProvider;
+	
+	private UserController userController;
 
 	@BeforeEach
 	void setUp() {
 		this.userService = mock(UserService.class);
-		this.jwtUtility = mock(JwtUtility.class);
-		this.userController = new UserController(userService, jwtUtility);
+		this.authenticatedUserIdProvider = mock(AuthenticatedUserIdProvider.class);
+		this.userController = new UserController(userService, authenticatedUserIdProvider);
 	}
 
 	@Test
@@ -41,7 +42,7 @@ class UserControllerTest {
 		doNothing().when(userService).create(userCreationRequestDto);
 
 		// Call
-		final var response = userController.userCreationHandler(userCreationRequestDto);
+		final var response = userController.createUser(userCreationRequestDto);
 
 		// Verify
 		assertThat(response).isNotNull();
@@ -60,7 +61,7 @@ class UserControllerTest {
 
 		// Call and Verify
 		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> userController.userCreationHandler(userCreationRequestDto));
+				() -> userController.createUser(userCreationRequestDto));
 		assertThat(response.getMessage()).contains(errorMessage);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 		verify(userService).create(userCreationRequestDto);
@@ -69,21 +70,20 @@ class UserControllerTest {
 	@Test
 	void getUserDetailsWithAccessToken() {
 		// Prepare
-		final String accessToken = "Bearer JWT-is-here";
 		final UUID userId = UUID.fromString("304227a6-5938-4bbc-9c3c-a13520372abc");
 		var userDetailDto = mock(UserDetailDto.class);
-		when(jwtUtility.extractUserId(accessToken)).thenReturn(userId);
+		when(authenticatedUserIdProvider.getUserId()).thenReturn(userId);
 		when(userService.getById(userId)).thenReturn(userDetailDto);
 
 		// Call
-		final var response = userController.loggedInUserDetailRetreivalHandler(accessToken);
+		final var response = userController.retrieveUser();
 
 		// Verify
 		assertThat(response).isNotNull();
 		assertThat(response.getBody()).isNotNull();
 		assertThat(response.getBody()).isInstanceOf(UserDetailDto.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		verify(jwtUtility, times(1)).extractUserId(accessToken);
+		verify(authenticatedUserIdProvider, times(1)).getUserId();
 		verify(userService, times(1)).getById(userId);
 	}
 

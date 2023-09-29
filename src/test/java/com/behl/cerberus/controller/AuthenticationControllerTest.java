@@ -36,7 +36,7 @@ class AuthenticationControllerTest {
 		when(authenticationService.login(userLoginRequestDto)).thenReturn(tokenSuccessResponseDto);
 
 		// Call
-		final var response = authenticationController.userLoginRequestHandler(userLoginRequestDto);
+		final var response = authenticationController.login(userLoginRequestDto);
 
 		// Verify
 		assertThat(response).isNotNull();
@@ -57,7 +57,7 @@ class AuthenticationControllerTest {
 
 		// Call and Verify
 		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationController.userLoginRequestHandler(userLoginRequestDto));
+				() -> authenticationController.login(userLoginRequestDto));
 		assertThat(response.getMessage()).contains(errorMessage);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(authenticationService).login(userLoginRequestDto);
@@ -71,7 +71,7 @@ class AuthenticationControllerTest {
 		when(authenticationService.refreshToken(refreshTokenRequestDto)).thenReturn(tokenSuccessResponseDto);
 
 		// Call
-		final var response = authenticationController.accessTokenRefreshalRequestHandler(refreshTokenRequestDto);
+		final var response = authenticationController.refreshToken(refreshTokenRequestDto);
 
 		// Verify
 		assertThat(response).isNotNull();
@@ -92,7 +92,7 @@ class AuthenticationControllerTest {
 
 		// Call and Verify
 		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationController.accessTokenRefreshalRequestHandler(refreshTokenRequestDto));
+				() -> authenticationController.refreshToken(refreshTokenRequestDto));
 		assertThat(response.getMessage()).contains(errorMessage);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
 		verify(authenticationService, times(1)).refreshToken(refreshTokenRequestDto);

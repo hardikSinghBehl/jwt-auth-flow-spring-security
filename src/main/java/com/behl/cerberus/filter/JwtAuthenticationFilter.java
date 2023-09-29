@@ -15,7 +15,6 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties;
-import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.JwtUtility;
 
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
@@ -31,7 +30,6 @@ import lombok.SneakyThrows;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtUtility jwtUtils;
-	private final UserRepository userRepository;
 	private final ApiPathExclusionConfigurationProperties apiPathExclusionConfigurationProperties;
 	
 	private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -52,9 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 					final var isTokenValid = jwtUtils.validateToken(token, userId);
 					
 					if (Boolean.TRUE.equals(isTokenValid)) {
-						final var user = userRepository.findById(userId).orElseThrow(IllegalStateException::new);
-						final var authentication = new UsernamePasswordAuthenticationToken(
-								user.getEmailId(), user.getPassword(), List.of());
+						final var authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
 						authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 						SecurityContextHolder.getContext().setAuthentication(authentication);
 					}
