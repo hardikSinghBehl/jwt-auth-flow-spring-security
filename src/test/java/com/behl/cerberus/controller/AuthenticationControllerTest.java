@@ -6,26 +6,32 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.service.AuthenticationService;
+import com.behl.cerberus.utility.RefreshTokenHeaderProvider;
+
+import net.bytebuddy.utility.RandomString;
 
 class AuthenticationControllerTest {
 
 	private AuthenticationController authenticationController;
 	private AuthenticationService authenticationService;
+	private RefreshTokenHeaderProvider refreshTokenHeaderProvider;
 
 	@BeforeEach
 	void setUp() {
 		this.authenticationService = mock(AuthenticationService.class);
-		this.authenticationController = new AuthenticationController(authenticationService);
+		this.refreshTokenHeaderProvider = mock(RefreshTokenHeaderProvider.class);
+		this.authenticationController = new AuthenticationController(authenticationService, refreshTokenHeaderProvider);
 	}
 
 	@Test
@@ -66,12 +72,13 @@ class AuthenticationControllerTest {
 	@Test
 	void refreshTokenSuccess() {
 		// Prepare
-		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
+		final var refreshToken = RandomString.make();
 		var tokenSuccessResponseDto = mock(TokenSuccessResponseDto.class);
-		when(authenticationService.refreshToken(refreshTokenRequestDto)).thenReturn(tokenSuccessResponseDto);
+		when(refreshTokenHeaderProvider.getRefreshToken()).thenReturn(Optional.of(refreshToken));
+		when(authenticationService.refreshToken(refreshToken)).thenReturn(tokenSuccessResponseDto);
 
 		// Call
-		final var response = authenticationController.refreshToken(refreshTokenRequestDto);
+		final var response = authenticationController.refreshToken();
 
 		// Verify
 		assertThat(response).isNotNull();
@@ -79,23 +86,24 @@ class AuthenticationControllerTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(response.getBody()).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getBody()).isEqualTo(tokenSuccessResponseDto);
-		verify(authenticationService, times(1)).refreshToken(refreshTokenRequestDto);
+		verify(authenticationService, times(1)).refreshToken(refreshToken);
 	}
 
 	@Test
 	void refreshTokenExpired() {
 		// Prepare
 		final String errorMessage = "Token expired";
-		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
-		when(authenticationService.refreshToken(refreshTokenRequestDto))
+		final var refreshToken = RandomString.make();
+		when(refreshTokenHeaderProvider.getRefreshToken()).thenReturn(Optional.of(refreshToken));
+		when(authenticationService.refreshToken(refreshToken))
 				.thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, errorMessage));
 
 		// Call and Verify
 		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationController.refreshToken(refreshTokenRequestDto));
+				() -> authenticationController.refreshToken());
 		assertThat(response.getMessage()).contains(errorMessage);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-		verify(authenticationService, times(1)).refreshToken(refreshTokenRequestDto);
+		verify(authenticationService, times(1)).refreshToken(refreshToken);
 	}
 
 }

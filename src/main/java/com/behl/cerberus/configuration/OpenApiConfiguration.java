@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -18,8 +19,11 @@ public class OpenApiConfiguration {
 
 	private final OpenApiConfigurationProperties openApiConfigurationProperties;
 	
-	private static final String SECURITY_COMPONENT_NAME = "Bearer Authentication";	
-	private static final String SECURITY_SCHEME = "Bearer";
+	private static final String BEARER_AUTH_COMPONENT_NAME = "Bearer Authentication";	
+	private static final String BEARER_AUTH_SCHEME = "Bearer";
+	
+	private static final String REFRESH_TOKEN_COMPONENT_NAME = "Refresh Token Header";
+	private static final String REFRESH_TOKEN_HEADER = "X-Refresh-Token";
 
 	@Bean
 	public OpenAPI customOpenAPI() {
@@ -30,12 +34,19 @@ public class OpenApiConfiguration {
 		return new OpenAPI()
 			    .info(info)
 			    .components(new Components()
-			        .addSecuritySchemes(SECURITY_COMPONENT_NAME,
+			        .addSecuritySchemes(BEARER_AUTH_COMPONENT_NAME,
 			            new SecurityScheme()
 			                .type(SecurityScheme.Type.HTTP)
-			                .scheme(SECURITY_SCHEME))
+			                .scheme(BEARER_AUTH_SCHEME))
+			        .addSecuritySchemes(REFRESH_TOKEN_COMPONENT_NAME,
+			        	new SecurityScheme()
+			        		.type(SecurityScheme.Type.APIKEY)
+			        		.in(In.HEADER)
+			        		.name(REFRESH_TOKEN_HEADER))
 			    )
-			    .addSecurityItem(new SecurityRequirement().addList(SECURITY_COMPONENT_NAME));
+			    .addSecurityItem(new SecurityRequirement()
+			    					.addList(BEARER_AUTH_COMPONENT_NAME)
+			    					.addList(REFRESH_TOKEN_COMPONENT_NAME));
 	}
 	
 }

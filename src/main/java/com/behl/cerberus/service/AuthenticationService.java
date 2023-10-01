@@ -8,7 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.behl.cerberus.configuration.JwtConfigurationProperties;
-import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.InvalidLoginCredentialsException;
@@ -56,8 +55,7 @@ public class AuthenticationService {
 				.expiresAt(accessTokenExpirationTimestamp).build();
 	}
 
-	public TokenSuccessResponseDto refreshToken(@NonNull final RefreshTokenRequestDto refreshTokenRequestDto) {
-		final var refreshToken = refreshTokenRequestDto.getRefreshToken();
+	public TokenSuccessResponseDto refreshToken(@NonNull final String refreshToken) {
 		final var userId = cacheManager.fetch(refreshToken, UUID.class).orElseThrow(TokenVerificationException::new);
 
 		final var accessToken = jwtUtility.generateAccessToken(userId);

@@ -21,7 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.behl.cerberus.configuration.JwtConfigurationProperties;
 import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT;
 import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT.RefreshToken;
-import com.behl.cerberus.dto.RefreshTokenRequestDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
@@ -142,13 +141,11 @@ class AuthenticationServiceTest {
 	void refreshTokenWithExpiredRefreshToken() {
 		// Prepare
 		final String refreshToken = "Refresh token JWT";
-		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
-		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
 		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.empty());
 
 		// Call and Verify
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationService.refreshToken(refreshTokenRequestDto));
+				() -> authenticationService.refreshToken(refreshToken));
 		assertThat(errorResponse.getReason()).isEqualTo("Authentication failure: Token missing, invalid, or expired");
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(cacheManager, times(1)).fetch(eq(refreshToken), eq(UUID.class));
@@ -159,8 +156,6 @@ class AuthenticationServiceTest {
 		// Prepare
 		final String refreshToken = "Refresh token JWT";
 		final UUID userId = UUID.randomUUID();
-		var refreshTokenRequestDto = mock(RefreshTokenRequestDto.class);
-		when(refreshTokenRequestDto.getRefreshToken()).thenReturn(refreshToken);
 		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
 		final String accessToken = "Access token JWT";
 		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
@@ -168,7 +163,7 @@ class AuthenticationServiceTest {
 		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 
 		// Call
-		final var response = authenticationService.refreshToken(refreshTokenRequestDto);
+		final var response = authenticationService.refreshToken(refreshToken);
 
 		// Verify
 		assertThat(response).isNotNull();
