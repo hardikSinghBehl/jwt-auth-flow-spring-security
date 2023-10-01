@@ -13,8 +13,10 @@ public class RefreshTokenHeaderProvider {
 	
 	private final HttpServletRequest httpServletRequest;
 	
+	public static final String REFRESH_TOKEN_HEADER = "X-Refresh-Token";
+	
 	public Optional<String> getRefreshToken() {
-		return Optional.ofNullable(httpServletRequest.getHeader("X-Refresh-Token"));
+		return Optional.ofNullable(httpServletRequest.getHeader(REFRESH_TOKEN_HEADER));
 	}
 
 }

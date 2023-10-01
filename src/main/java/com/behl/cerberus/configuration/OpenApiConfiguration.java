@@ -4,6 +4,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.behl.cerberus.utility.RefreshTokenHeaderProvider;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -23,7 +25,7 @@ public class OpenApiConfiguration {
 	private static final String BEARER_AUTH_SCHEME = "Bearer";
 	
 	private static final String REFRESH_TOKEN_COMPONENT_NAME = "Refresh Token Header";
-	private static final String REFRESH_TOKEN_HEADER = "X-Refresh-Token";
+	private static final String REFRESH_TOKEN_HEADER = RefreshTokenHeaderProvider.REFRESH_TOKEN_HEADER;
 
 	@Bean
 	public OpenAPI customOpenAPI() {
