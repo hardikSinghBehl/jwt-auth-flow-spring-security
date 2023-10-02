@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +22,7 @@ import lombok.Setter;
 public class User {
 
 	@Id
+	@Setter(AccessLevel.NONE)
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id", nullable = false, unique = true)
 	private UUID id;
@@ -40,6 +42,7 @@ public class User {
 	@Column(name = "status", nullable = false)
 	private UserStatus userStatus;
 
+	@Setter(AccessLevel.NONE)
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
