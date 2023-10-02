@@ -43,13 +43,12 @@ public class AuthenticationService {
 			throw new InvalidLoginCredentialsException();
 		}
 
-		final var userId = user.getId();
-		final var accessToken = jwtUtility.generateAccessToken(userId);
+		final var accessToken = jwtUtility.generateAccessToken(user);
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 		
 		final var refreshToken = refreshTokenGenerator.generate();
 		final var refreshTokenValidity = jwtConfigurationProperties.getJwt().getRefreshToken().getValidity();
-		cacheManager.save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
+		cacheManager.save(refreshToken, user.getId(), Duration.ofMinutes(refreshTokenValidity));
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).refreshToken(refreshToken)
 				.expiresAt(accessTokenExpirationTimestamp).build();
@@ -57,8 +56,9 @@ public class AuthenticationService {
 
 	public TokenSuccessResponseDto refreshToken(@NonNull final String refreshToken) {
 		final var userId = cacheManager.fetch(refreshToken, UUID.class).orElseThrow(TokenVerificationException::new);
-
-		final var accessToken = jwtUtility.generateAccessToken(userId);
+		final var user = userRepository.getReferenceById(userId);
+		
+		final var accessToken = jwtUtility.generateAccessToken(user);
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).expiresAt(accessTokenExpirationTimestamp)

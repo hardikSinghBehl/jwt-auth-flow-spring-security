@@ -36,6 +36,9 @@ public class User {
 
 	@Column(name = "password", nullable = false)
 	private String password;
+	
+	@Column(name = "status", nullable = false)
+	private UserStatus userStatus;
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
@@ -43,6 +46,7 @@ public class User {
 	@PrePersist
 	void onCreate() {
 		this.id = UUID.randomUUID();
+		this.userStatus = UserStatus.PENDING_APPROVAL;
 		this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
 	}
 

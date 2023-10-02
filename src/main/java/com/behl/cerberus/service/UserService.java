@@ -49,8 +49,13 @@ public class UserService {
 
 	public UserDetailDto getById(@NonNull final UUID userId) {
 		final var user = getUserById(userId);
-		return UserDetailDto.builder().firstName(user.getFirstName()).lastName(user.getLastName())
-				.emailId(user.getEmailId()).createdAt(user.getCreatedAt()).build();
+		return UserDetailDto.builder()
+				.firstName(user.getFirstName())
+				.lastName(user.getLastName())
+				.emailId(user.getEmailId())
+				.status(user.getUserStatus().getValue())
+				.createdAt(user.getCreatedAt())
+				.build();
 	}
 
 	private User getUserById(@NonNull final UUID userId) {

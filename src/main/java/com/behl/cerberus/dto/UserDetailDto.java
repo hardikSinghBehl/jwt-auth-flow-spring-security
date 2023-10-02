@@ -18,6 +18,7 @@ public class UserDetailDto {
 	private String firstName;
 	private String lastName;
 	private String emailId;
+	private String status;
 	private LocalDateTime createdAt;
 
 }
