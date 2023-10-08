@@ -23,7 +23,7 @@ public class IdentityVerificationRequestDto {
 	private LocalDate dateOfBirth;
 	
 	@NotBlank(message = "Street address must not be empty")
-    @Schema(requiredMode = RequiredMode.REQUIRED, description = "Current residential street address", example = "12/3A Main Street")
+	@Schema(requiredMode = RequiredMode.REQUIRED, description = "Current residential street address", example = "12/3A Main Street")
 	private String streetAddress;
 	
 	@NotBlank(message = "City must not be empty")
