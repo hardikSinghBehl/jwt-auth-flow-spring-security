@@ -36,17 +36,17 @@ public class ResidentialAddress {
 	@JoinColumn(name = "user_id", nullable = true, insertable = false, updatable = false)
 	private User user;
 
-    @Column(name = "street_address", nullable = false)
-    private String streetAddress;
-
-    @Column(name = "city", nullable = false)
-    private String city;
-
-    @Column(name = "state", nullable = false)
-    private String state;
-
-    @Column(name = "postal_code", nullable = false)
-    private String postalCode;
+	@Column(name = "street_address", nullable = false)
+	private String streetAddress;
+	
+	@Column(name = "city", nullable = false)
+	private String city;
+	
+	@Column(name = "state", nullable = false)
+	private String state;
+	
+	@Column(name = "postal_code", nullable = false)
+	private String postalCode;
     
 	@PrePersist
 	void onCreate() {
