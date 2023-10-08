@@ -54,6 +54,7 @@ public class UserService {
 				.lastName(user.getLastName())
 				.emailId(user.getEmailId())
 				.status(user.getUserStatus().getValue())
+				.dateOfBirth(user.getDateOfBirth())
 				.createdAt(user.getCreatedAt())
 				.build();
 	}

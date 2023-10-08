@@ -1,5 +1,6 @@
 package com.behl.cerberus.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -40,6 +41,9 @@ public class User {
 
 	@Column(name = "password", nullable = false)
 	private String password;
+	
+	@Column(name = "date_of_birth")
+	private LocalDate dateOfBirth;
 	
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
