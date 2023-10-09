@@ -3,6 +3,7 @@ package com.behl.cerberus.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +29,8 @@ public class IdentityVerificationController {
 	@PostMapping(value = "/identity-verification", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Verify user identity", description = "Performs identity verification check on logged-in user")
 	@ApiResponse(responseCode = "200", description = "User identity verification check successfully passed")
-	public ResponseEntity<HttpStatus> createUser(@Valid @RequestBody final IdentityVerificationRequestDto identityVerificationRequest) {
+	@PreAuthorize("hasAuthority('selfservice.write')")
+	public ResponseEntity<HttpStatus> verifyUserIdentity(@Valid @RequestBody final IdentityVerificationRequestDto identityVerificationRequest) {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		identityVerificationService.verifyUserIdentity(userId, identityVerificationRequest);
 		return ResponseEntity.ok().build();
