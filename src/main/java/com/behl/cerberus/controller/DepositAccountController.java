@@ -33,9 +33,9 @@ public class DepositAccountController {
 
     @PostMapping
     @Operation(summary = "Creates a Deposit Account", description = "Creates a new deposit account corresponding to the logged-in user")
-	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "201", description = "Deposit Account created successfully"),
-			@ApiResponse(responseCode = "409", description = "Deposit Account already exists corresponding to the logged-in user") })
+    @ApiResponses(value = { 
+            @ApiResponse(responseCode = "201", description = "Deposit Account created successfully"),
+            @ApiResponse(responseCode = "409", description = "Deposit Account already exists corresponding to the logged-in user") })
     public ResponseEntity<HttpStatus> createDepositAccount() {
         final var userId = authenticatedUserIdProvider.getUserId();
         depositAccountService.create(userId);
@@ -53,9 +53,9 @@ public class DepositAccountController {
 
     @PostMapping(value = "/transactions", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Process a transaction", description = "Processes transaction against users deposit account")
-	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "200", description = "Transaction processed successfully"),
-			@ApiResponse(responseCode = "404", description = "Users deposit account must be created prior to processing transaction(s)") })
+    @ApiResponses(value = { 
+            @ApiResponse(responseCode = "200", description = "Transaction processed successfully"),
+            @ApiResponse(responseCode = "404", description = "Users deposit account must be created prior to processing transaction(s)") })
     public ResponseEntity<HttpStatus> processTransaction(@Valid @RequestBody final TransactionRequestDto transactionRequest) {
         final var userId = authenticatedUserIdProvider.getUserId();
         depositAccountService.processTransaction(userId, transactionRequest);
