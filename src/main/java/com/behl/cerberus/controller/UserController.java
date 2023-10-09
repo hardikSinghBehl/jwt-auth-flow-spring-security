@@ -3,6 +3,7 @@ package com.behl.cerberus.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +45,7 @@ public class UserController {
 	@Operation(summary = "Updates user account details", description = "Updates account details for the logged-in user")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User account details updated successfully") })
+	@PreAuthorize("hasAnyAuthority('selfservice.write', 'fullaccess')")
 	public ResponseEntity<HttpStatus> updateUser(@Valid @RequestBody final UserUpdationRequestDto userUpdationRequest) {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		userService.update(userId, userUpdationRequest);
@@ -52,6 +54,7 @@ public class UserController {
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Retrieves current logged-in user's account details", description = "Private endpoint which retreives user account details against the Access-token JWT provided in headers")
+	@PreAuthorize("hasAnyAuthority('selfservice.read', 'fullaccess')")
 	public ResponseEntity<UserDetailDto> retrieveUser() {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		final var userDetail = userService.getById(userId);
