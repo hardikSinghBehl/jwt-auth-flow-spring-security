@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,14 +20,24 @@ import com.behl.cerberus.dto.ExceptionResponseDto;
 
 @ControllerAdvice
 public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
+	
+	private static final String FORBIDDEN_ERROR_MESSAGE = "Access Denied: You do not have sufficient privileges to access this resource.";
 
 	@ResponseBody
 	@ExceptionHandler(ResponseStatusException.class)
-	public ResponseEntity<?> responseStatusExceptionHandler(final ResponseStatusException exception) {
+	public ResponseEntity<ExceptionResponseDto<String>> responseStatusExceptionHandler(final ResponseStatusException exception) {
 		final var exceptionResponse = new ExceptionResponseDto<String>();
 		exceptionResponse.setStatus(exception.getStatusCode().toString());
 		exceptionResponse.setDescription(exception.getReason());
 		return ResponseEntity.status(exception.getStatusCode()).body(exceptionResponse);
+	}
+	
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ExceptionResponseDto<String>> accessDeniedExceptionHandler(final AccessDeniedException exception) {
+		final var exceptionResponse = new ExceptionResponseDto<String>();
+		exceptionResponse.setStatus(HttpStatus.FORBIDDEN.toString());
+		exceptionResponse.setDescription(FORBIDDEN_ERROR_MESSAGE);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
 	}
 
 	@Override
