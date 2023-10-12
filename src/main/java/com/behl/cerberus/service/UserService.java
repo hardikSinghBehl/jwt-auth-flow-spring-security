@@ -11,6 +11,7 @@ import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
 import com.behl.cerberus.entity.User;
+import com.behl.cerberus.entity.UserStatus;
 import com.behl.cerberus.exception.AccountAlreadyExistsException;
 import com.behl.cerberus.repository.UserRepository;
 
@@ -57,6 +58,13 @@ public class UserService {
 				.dateOfBirth(user.getDateOfBirth())
 				.createdAt(user.getCreatedAt())
 				.build();
+	}
+	
+	public void deactivate(@NonNull final UUID userId) {
+		final var user = getUserById(userId);
+		user.setUserStatus(UserStatus.DEACTIVATED);
+		
+		userRepository.save(user);
 	}
 
 	private User getUserById(@NonNull final UUID userId) {
