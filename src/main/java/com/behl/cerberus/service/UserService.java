@@ -24,6 +24,7 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final TokenRevocationService tokenRevocationService;
 
 	public void create(@NonNull final UserCreationRequestDto userCreationRequestDto) {
 		final var emailId = userCreationRequestDto.getEmailId();
@@ -63,8 +64,9 @@ public class UserService {
 	public void deactivate(@NonNull final UUID userId) {
 		final var user = getUserById(userId);
 		user.setUserStatus(UserStatus.DEACTIVATED);
-		
 		userRepository.save(user);
+		
+		tokenRevocationService.revoke();
 	}
 
 	private User getUserById(@NonNull final UUID userId) {
