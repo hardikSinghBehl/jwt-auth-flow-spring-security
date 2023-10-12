@@ -1,0 +1,51 @@
+# For a more secure and flexible setup, consider using environment variables from an .env file. 
+# Reference: https://docs.docker.com/compose/environment-variables/set-environment-variables/
+version: '3.7'
+
+services:
+  mysql-datasource:
+    image: mysql:8
+    container_name: mysql-datasource
+    ports:
+      - 4407:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: cerberus
+      MYSQL_USER: cerberus
+      MYSQL_PASSWORD: Password@123
+    networks:
+      - cerberus
+
+  redis-cache:
+    image: redis
+    container_name: redis-cache
+    ports:
+      - "7480:6379"
+    command: redis-server --requirepass "Password@123"
+    networks:
+      - cerberus
+
+  backend-application:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: backend-application
+    ports:
+    - 8080:8080
+    depends_on:
+      - mysql-datasource
+      - redis-cache
+    environment:
+      MYSQL_URL: jdbc:mysql://mysql-datasource:3306/cerberus
+      MYSQL_USERNAME: cerberus
+      MYSQL_PASSWORD: Password@123
+      REDIS_HOSTNAME: redis-cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: Password@123
+      JWT_SECRET_KEY: 093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
+    networks:
+      - cerberus
+    restart: on-failure:5
+
+networks:
+  cerberus:
