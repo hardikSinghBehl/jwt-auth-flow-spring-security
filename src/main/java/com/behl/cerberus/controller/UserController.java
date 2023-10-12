@@ -45,7 +45,7 @@ public class UserController {
 	@Operation(summary = "Updates user account details", description = "Updates account details for the logged-in user")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User account details updated successfully") })
-	@PreAuthorize("hasAnyAuthority('selfservice.write', 'fullaccess')")
+	@PreAuthorize("hasAnyAuthority('userprofile.update', 'fullaccess')")
 	public ResponseEntity<HttpStatus> updateUser(@Valid @RequestBody final UserUpdationRequestDto userUpdationRequest) {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		userService.update(userId, userUpdationRequest);
@@ -54,7 +54,7 @@ public class UserController {
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Retrieves current logged-in user's account details", description = "Private endpoint which retreives user account details against the Access-token JWT provided in headers")
-	@PreAuthorize("hasAnyAuthority('selfservice.read', 'fullaccess')")
+	@PreAuthorize("hasAnyAuthority('userprofile.read', 'fullaccess')")
 	public ResponseEntity<UserDetailDto> retrieveUser() {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		final var userDetail = userService.getById(userId);

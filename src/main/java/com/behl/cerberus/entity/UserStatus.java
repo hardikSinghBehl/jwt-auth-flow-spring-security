@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum UserStatus {
 	
-	PENDING_APPROVAL("Pending Approval", List.of("selfservice.read", "selfservice.write")),
+	PENDING_APPROVAL("Pending Approval", List.of("userprofile.read", "userprofile.update", "useridentity.verify")),
 	APPROVED("Approved", List.of("fullaccess"));
 	
 	private final String value;

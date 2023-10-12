@@ -29,7 +29,7 @@ public class IdentityVerificationController {
 	@PostMapping(value = "/identity-verification", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Verify user identity", description = "Performs identity verification check on logged-in user")
 	@ApiResponse(responseCode = "200", description = "User identity verification check successfully passed")
-	@PreAuthorize("hasAuthority('selfservice.write')")
+	@PreAuthorize("hasAuthority('useridentity.verify')")
 	public ResponseEntity<HttpStatus> verifyUserIdentity(@Valid @RequestBody final IdentityVerificationRequestDto identityVerificationRequest) {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		identityVerificationService.verifyUserIdentity(userId, identityVerificationRequest);
