@@ -1,5 +1,6 @@
 package com.behl.cerberus.utility;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -45,7 +46,12 @@ public class JwtUtility {
 		return UUID.fromString(audience);
 	}
 	
+	public String getJti(@NonNull final String token) {
+		return extractClaim(token, Claims::getId);
+	}
+	
 	public String generateAccessToken(final User user) {
+		final var jti = String.valueOf(UUID.randomUUID());
 		final var accessTokenValidity = jwtConfigurationProperties.getJwt().getAccessToken().getValidity();
 		final var expiration = TimeUnit.MINUTES.toMillis(accessTokenValidity);
 		final var secretKey = jwtConfigurationProperties.getJwt().getSecretKey();
@@ -58,6 +64,7 @@ public class JwtUtility {
 		
 		return Jwts.builder()
 				.setClaims(claims)
+				.setId(jti)
 				.setIssuer(issuer)
 				.setIssuedAt(currentTimestamp)
 				.setExpiration(expirationTimestamp)
@@ -85,6 +92,12 @@ public class JwtUtility {
 	public LocalDateTime getExpirationTimestamp(@NonNull final String token) {
 		final var expiration = extractClaim(token, Claims::getExpiration);
 		return expiration.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime();
+	}
+	
+	public Duration getTimeUntilExpiration(@NonNull final String token) {
+	    final var expirationTimestamp = extractClaim(token, Claims::getExpiration).toInstant();
+	    final var currentTimestamp = new Date().toInstant();
+	    return Duration.between(currentTimestamp, expirationTimestamp);
 	}
 
 	private <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {

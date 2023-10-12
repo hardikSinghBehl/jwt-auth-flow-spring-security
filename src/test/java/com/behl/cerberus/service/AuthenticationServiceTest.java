@@ -146,7 +146,7 @@ class AuthenticationServiceTest {
 		// Call and Verify
 		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
 				() -> authenticationService.refreshToken(refreshToken));
-		assertThat(errorResponse.getReason()).isEqualTo("Authentication failure: Token missing, invalid, or expired");
+		assertThat(errorResponse.getReason()).isEqualTo("Authentication failure: Token missing, invalid, revoked or expired");
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 		verify(cacheManager, times(1)).fetch(eq(refreshToken), eq(UUID.class));
 	}

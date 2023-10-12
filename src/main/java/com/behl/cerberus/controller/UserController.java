@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,6 +60,16 @@ public class UserController {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		final var userDetail = userService.getById(userId);
 		return ResponseEntity.ok(userDetail);
+	}
+	
+	@DeleteMapping(value = "/deactivate")
+	@Operation(summary = "Deactivates current logged-in user's profile", description = "Deactivates user's profile: can only be undone by praying to a higher power or contacting our vanished customer support.")
+	@ApiResponse(responseCode = "204", description = "User profile successfully deactivated")
+	@PreAuthorize("hasAnyAuthority('userprofile.update', 'fullaccess')")
+	public ResponseEntity<HttpStatus> deactivateUser(){
+		final var userId = authenticatedUserIdProvider.getUserId();
+		userService.deactivate(userId);
+		return ResponseEntity.noContent().build();
 	}
 
 }

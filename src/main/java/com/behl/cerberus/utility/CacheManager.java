@@ -2,6 +2,8 @@ package com.behl.cerberus.utility;
 
 import java.time.Duration;
 import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +22,11 @@ public class CacheManager {
     public void save(@NonNull final String key, @NonNull final Object value, @NonNull final Duration timeToLive) {
         redisTemplate.opsForValue().set(key, value, timeToLive);
         log.info("Cached value with key '{}' for {} seconds", key, timeToLive.toSeconds());
+    }
+    
+    public void save(@NonNull final String key, @NonNull final Duration timeToLive) {
+        redisTemplate.opsForValue().set(key, StringUtils.EMPTY, timeToLive);
+        log.info("Cached non value key '{}' for {} seconds", key, timeToLive.toSeconds());
     }
 
     public <T> Optional<T> fetch(@NonNull final String key, @NonNull final Class<T> targetClass) {

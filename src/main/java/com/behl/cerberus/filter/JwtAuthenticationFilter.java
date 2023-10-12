@@ -15,6 +15,8 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties;
+import com.behl.cerberus.exception.TokenVerificationException;
+import com.behl.cerberus.service.TokenRevocationService;
 import com.behl.cerberus.utility.JwtUtility;
 
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
@@ -30,6 +32,7 @@ import lombok.SneakyThrows;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtUtility jwtUtils;
+	private final TokenRevocationService tokenRevocationService; 
 	private final ApiPathExclusionConfigurationProperties apiPathExclusionConfigurationProperties;
 	
 	private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -46,6 +49,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			if (StringUtils.isNotEmpty(authorizationHeader)) {
 				if (authorizationHeader.startsWith(BEARER_PREFIX)) {
 					final var token = authorizationHeader.replace(BEARER_PREFIX, StringUtils.EMPTY);
+					final var isTokenRevoked = tokenRevocationService.isRevoked(token);
+					if (Boolean.TRUE.equals(isTokenRevoked)) {
+						throw new TokenVerificationException();
+					}
+					
 					final var userId = jwtUtils.extractUserId(token);
 					final var isTokenValid = jwtUtils.validateToken(token, userId);
 					final var authorities = jwtUtils.getAuthority(token);
