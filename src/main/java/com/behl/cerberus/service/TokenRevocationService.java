@@ -28,7 +28,7 @@ public class TokenRevocationService {
 
 	public boolean isRevoked(@NonNull final String authHeader) {
 		final var jti = jwtUtility.getJti(authHeader);
-		return cacheManager.fetch(jti, String.class).isPresent();
+		return cacheManager.isPresent(jti);
 	}
 
 }
