@@ -2,11 +2,9 @@ package com.behl.cerberus.service;
 
 import java.util.UUID;
 
-import org.mapstruct.factory.Mappers;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.behl.cerberus.configuration.DatasourcePatchOperationManager;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
@@ -45,7 +43,8 @@ public class UserService {
 
 	public void update(@NonNull final UUID userId, @NonNull UserUpdationRequestDto userUpdationRequestDto) {
 		final var user = getUserById(userId);
-		Mappers.getMapper(DatasourcePatchOperationManager.class).patch(userUpdationRequestDto, user);
+		user.setFirstName(userUpdationRequestDto.getFirstName());
+		user.setLastName(userUpdationRequestDto.getLastName());
 		userRepository.save(user);
 	}
 
