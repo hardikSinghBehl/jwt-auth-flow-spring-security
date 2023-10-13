@@ -78,16 +78,6 @@ public class JwtUtility {
 					.map(SimpleGrantedAuthority::new)
 					.collect(Collectors.toList());
 	}
-
-	public Boolean validateToken(@NonNull final String token, @NonNull final UUID userId) {
-		final var audience = extractClaim(token, Claims::getAudience);
-		return UUID.fromString(audience).equals(userId) && !isTokenExpired(token);
-	}
-
-	public Boolean isTokenExpired(@NonNull final String token) {
-		final var tokenExpirationDate = extractClaim(token, Claims::getExpiration);
-		return tokenExpirationDate.before(new Date(System.currentTimeMillis()));
-	}
 	
 	public LocalDateTime getExpirationTimestamp(@NonNull final String token) {
 		final var expiration = extractClaim(token, Claims::getExpiration);
