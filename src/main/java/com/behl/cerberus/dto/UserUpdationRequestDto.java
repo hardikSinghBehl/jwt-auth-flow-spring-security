@@ -1,23 +1,22 @@
 package com.behl.cerberus.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
 @JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class UserUpdationRequestDto {
 
-	@JsonAlias("firstName")
-	@Schema(requiredMode = RequiredMode.NOT_REQUIRED, description = "first-name of user", example = "Hardik")
+	@NotBlank(message = "first-name must not be empty")
+	@Schema(requiredMode = RequiredMode.REQUIRED, description = "first-name of user", example = "Hardik")
 	private String firstName;
 
-	@JsonAlias("lastName")
-	@Schema(requiredMode = RequiredMode.NOT_REQUIRED, description = "last-name of user", example = "Singh")
+	@Schema(requiredMode = RequiredMode.NOT_REQUIRED, description = "last-name of user", example = "Behl")
 	private String lastName;
 
 }

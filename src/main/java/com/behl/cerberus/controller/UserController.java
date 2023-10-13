@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,8 +42,8 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
-	@PatchMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-	@Operation(summary = "Updates user account details", description = "Updates account details for the logged-in user")
+	@PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Updates user profile details", description = "Updates profile details corresponding to logged-in user")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User account details updated successfully") })
 	@PreAuthorize("hasAnyAuthority('userprofile.update', 'fullaccess')")
