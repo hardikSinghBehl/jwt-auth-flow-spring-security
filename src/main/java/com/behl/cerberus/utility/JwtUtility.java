@@ -18,7 +18,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import com.behl.cerberus.configuration.JwtConfigurationProperties;
+import com.behl.cerberus.configuration.TokenConfigurationProperties;
 import com.behl.cerberus.entity.User;
 
 import io.jsonwebtoken.Claims;
@@ -30,10 +30,10 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-@EnableConfigurationProperties(JwtConfigurationProperties.class)
+@EnableConfigurationProperties(TokenConfigurationProperties.class)
 public class JwtUtility {
 
-	private final JwtConfigurationProperties jwtConfigurationProperties;
+	private final TokenConfigurationProperties tokenConfigurationProperties;
 	
 	private static final String BEARER_PREFIX = "Bearer ";
 	private static final String SCOPE_CLAIM_NAME = "scp";
@@ -52,9 +52,9 @@ public class JwtUtility {
 	
 	public String generateAccessToken(final User user) {
 		final var jti = String.valueOf(UUID.randomUUID());
-		final var accessTokenValidity = jwtConfigurationProperties.getJwt().getAccessToken().getValidity();
+		final var accessTokenValidity = tokenConfigurationProperties.getAccessToken().getValidity();
 		final var expiration = TimeUnit.MINUTES.toMillis(accessTokenValidity);
-		final var secretKey = jwtConfigurationProperties.getJwt().getSecretKey();
+		final var secretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
 		final var currentTimestamp = new Date(System.currentTimeMillis());
 		final var expirationTimestamp = new Date(System.currentTimeMillis() + expiration);
 		final var scopes = user.getUserStatus().getScopes().stream().collect(Collectors.joining(StringUtils.SPACE));
@@ -91,7 +91,7 @@ public class JwtUtility {
 	}
 
 	private <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {
-		final var secretKey = jwtConfigurationProperties.getJwt().getSecretKey();
+		final var secretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
 		final var santizedToken = token.replace(BEARER_PREFIX, StringUtils.EMPTY);
 		final var claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(santizedToken).getBody();
 		return claimsResolver.apply(claims);

@@ -28,9 +28,9 @@ com:
             - /auth/login
           put: 
             - /auth/refresh
-      jwt:
-        secret-key: ${JWT_SECRET_KEY}
+      token:
         access-token:
+          secret-key: ${JWT_SECRET_KEY}
           validity: 30
         refresh-token:
           validity: 120
