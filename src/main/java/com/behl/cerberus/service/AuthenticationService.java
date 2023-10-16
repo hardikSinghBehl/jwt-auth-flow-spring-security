@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.behl.cerberus.configuration.JwtConfigurationProperties;
+import com.behl.cerberus.configuration.TokenConfigurationProperties;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.InvalidLoginCredentialsException;
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@EnableConfigurationProperties(JwtConfigurationProperties.class)
+@EnableConfigurationProperties(TokenConfigurationProperties.class)
 public class AuthenticationService {
 
 	private final JwtUtility jwtUtility;
@@ -30,7 +30,7 @@ public class AuthenticationService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenGenerator refreshTokenGenerator;
-	private final JwtConfigurationProperties jwtConfigurationProperties;
+	private final TokenConfigurationProperties tokenConfigurationProperties;
 
 	public TokenSuccessResponseDto login(@NonNull final UserLoginRequestDto userLoginRequestDto) {
 		final var user = userRepository.findByEmailId(userLoginRequestDto.getEmailId())
@@ -47,7 +47,7 @@ public class AuthenticationService {
 		final var accessTokenExpirationTimestamp = jwtUtility.getExpirationTimestamp(accessToken);
 		
 		final var refreshToken = refreshTokenGenerator.generate();
-		final var refreshTokenValidity = jwtConfigurationProperties.getJwt().getRefreshToken().getValidity();
+		final var refreshTokenValidity = tokenConfigurationProperties.getRefreshToken().getValidity();
 		cacheManager.save(refreshToken, user.getId(), Duration.ofMinutes(refreshTokenValidity));
 
 		return TokenSuccessResponseDto.builder().accessToken(accessToken).refreshToken(refreshToken)
