@@ -15,12 +15,14 @@ import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = "/users")
+@Tag(name = "Identity Verification", description = "Endpoints for identity verification")
 public class IdentityVerificationController {
 
 	private final IdentityVerificationService identityVerificationService;
