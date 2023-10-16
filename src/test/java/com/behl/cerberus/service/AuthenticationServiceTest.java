@@ -18,9 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.behl.cerberus.configuration.JwtConfigurationProperties;
-import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT;
-import com.behl.cerberus.configuration.JwtConfigurationProperties.JWT.RefreshToken;
+import com.behl.cerberus.configuration.TokenConfigurationProperties;
+import com.behl.cerberus.configuration.TokenConfigurationProperties.RefreshToken;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
@@ -36,7 +35,7 @@ class AuthenticationServiceTest {
 	private UserRepository userRepository;
 	private PasswordEncoder passwordEncoder;
 	private RefreshTokenGenerator refreshTokenGenerator;
-	private JwtConfigurationProperties jwtConfigurationProperties;
+	private TokenConfigurationProperties tokenConfigurationProperties;
 	
 	private AuthenticationService authenticationService;
 
@@ -47,8 +46,8 @@ class AuthenticationServiceTest {
 		this.userRepository = mock(UserRepository.class);
 		this.passwordEncoder = mock(PasswordEncoder.class);
 		this.refreshTokenGenerator = mock(RefreshTokenGenerator.class);
-		this.jwtConfigurationProperties = mock(JwtConfigurationProperties.class);
-		this.authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, jwtConfigurationProperties);
+		this.tokenConfigurationProperties = mock(TokenConfigurationProperties.class);
+		this.authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, tokenConfigurationProperties);
 	}
 
 	@Test
@@ -67,10 +66,8 @@ class AuthenticationServiceTest {
 		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
 		when(passwordEncoder.matches(rawPassword, encryptedPassword)).thenReturn(true);
 		
-		final var jwtProperties = mock(JWT.class);
 		final var refreshTokenProperties = mock(RefreshToken.class);
-		when(jwtConfigurationProperties.getJwt()).thenReturn(jwtProperties);
-		when(jwtProperties.getRefreshToken()).thenReturn(refreshTokenProperties);
+		when(tokenConfigurationProperties.getRefreshToken()).thenReturn(refreshTokenProperties);
 		when(refreshTokenProperties.getValidity()).thenReturn(20);
 
 		final String accessToken = "test-refresh-token";
