@@ -7,7 +7,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,9 +71,7 @@ class AuthenticationServiceTest {
 
 		final String accessToken = "test-refresh-token";
 		final String refreshToken = "test-refresh-token";
-		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 		when(refreshTokenGenerator.generate()).thenReturn(refreshToken);
 
 		// Call
@@ -84,11 +81,9 @@ class AuthenticationServiceTest {
 		assertThat(response).isNotNull();
 		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
-		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
 		assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
 		verify(userRepository, times(1)).findByEmailId(emailId);
 		verify(jwtUtility, times(1)).generateAccessToken(user);
-		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
 		verify(refreshTokenGenerator, times(1)).generate();
 		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
 	}
@@ -158,9 +153,7 @@ class AuthenticationServiceTest {
 		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
 		when(userRepository.getReferenceById(userId)).thenReturn(user);
 		final String accessToken = "Access token JWT";
-		final LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(30);
 		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-		when(jwtUtility.getExpirationTimestamp(accessToken)).thenReturn(expirationTime);
 
 		// Call
 		final var response = authenticationService.refreshToken(refreshToken);
@@ -169,9 +162,7 @@ class AuthenticationServiceTest {
 		assertThat(response).isNotNull();
 		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
 		assertThat(response.getAccessToken()).isEqualTo(accessToken);
-		assertThat(response.getExpiresAt()).isEqualTo(expirationTime);
 		verify(jwtUtility, times(1)).generateAccessToken(user);
-		verify(jwtUtility, times(1)).getExpirationTimestamp(accessToken);
 	}
 
 }

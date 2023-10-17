@@ -1,8 +1,6 @@
 package com.behl.cerberus.utility;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -120,20 +118,6 @@ public class JwtUtility {
 		return Arrays.stream(scopes.split(StringUtils.SPACE))
 					.map(SimpleGrantedAuthority::new)
 					.collect(Collectors.toList());
-	}
-	
-	/**
-	 * Retrieves the expiration timestamp of a given JWT token, which indicates the
-	 * time after which the token would no longer be eligible for authenticating a
-	 * user with the system.
-	 * 
-	 * @param token The JWT token from which to extract the expiration timestamp.
-	 * @throws IllegalArgumentException if provided argument is <code>null</code>
-	 * @return The expiration timestamp.
-	 */
-	public LocalDateTime getExpirationTimestamp(@NonNull final String token) {
-		final var expiration = extractClaim(token, Claims::getExpiration);
-		return expiration.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime();
 	}
 	
 	/**

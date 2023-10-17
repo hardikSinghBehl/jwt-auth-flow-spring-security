@@ -1,7 +1,5 @@
 package com.behl.cerberus.dto;
 
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -19,6 +17,5 @@ public class TokenSuccessResponseDto {
 
 	private String accessToken;
 	private String refreshToken;
-	private LocalDateTime expiresAt;
 
 }
