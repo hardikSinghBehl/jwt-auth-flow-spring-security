@@ -26,6 +26,26 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
+/**
+ * JwtAuthenticationFilter is a custom filter registered with the spring
+ * security filter chain and works in conjunction with the security
+ * configuration, as defined in {@link com.behl.cerberus.configuration.SecurityConfiguration}. 
+ * 
+ * It is responsible for verifying the authenticity of incoming HTTP requests to
+ * secured API endpoints by examining JWT token in the request header, verifying 
+ * it's signature, expiration and evaluating it's presence in the token revocation list.
+ * If authentication is successful, the filter populates the security context with
+ * the user's unique identifier and the permissions associated with the
+ * authenticated user which can be referenced by the application later.
+ * 
+ * This filter is only executed for secure endpoints, and is skipped if the incoming
+ * request is destined to a non-secured public API endpoint.
+ *
+ * @see com.behl.cerberus.configuration.SecurityConfiguration
+ * @see com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties
+ * @see com.behl.cerberus.service.TokenRevocationService
+ * @see com.behl.cerberus.utility.JwtUtility
+ */
 @Component
 @RequiredArgsConstructor
 @EnableConfigurationProperties(ApiPathExclusionConfigurationProperties.class)
