@@ -21,6 +21,23 @@ import com.behl.cerberus.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
+/**
+ * Configuration class responsible for defining and configuring the security
+ * settings for the application. It sets up the following components and
+ * features:
+ * <ul>
+ *   <li>Configuration of non-secured public API endpoints.</li>
+ *   <li>Configuration of authentication entry point to handle authentication
+ *       failures during the request evaluation through the filter chain.</li>
+ *   <li>Integration of a custom JWT filter into the security filter chain to ensure
+ *       that all requests to private endpoints pass through the filter for
+ *       authentication verification.</li>
+ * </ul>
+ *
+ * @see com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties
+ * @see com.behl.cerberus.filter.JwtAuthenticationFilter
+ * @see com.behl.cerberus.configuration.CustomAuthenticationEntryPoint
+ */
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor

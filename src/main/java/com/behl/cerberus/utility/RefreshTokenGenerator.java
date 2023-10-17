@@ -8,11 +8,20 @@ import org.springframework.stereotype.Component;
 
 import lombok.SneakyThrows;
 
+/**
+ * Utility class responsible for generating refresh tokens. These tokens are used
+ * to facilitate secure and time-limited re-authentication within the system.
+ * 
+ * @see com.behl.cerberus.service.AuthenticationService
+ */
 @Component
 public class RefreshTokenGenerator {
 	
     private static final String ALGORITHM = "SHA256";
 
+	/**
+	 * @return A randomly generated refresh token that is unique to each invocation.
+	 */
 	@SneakyThrows
 	public String generate() {
 		final var randomIdentifier = String.valueOf(UUID.randomUUID());

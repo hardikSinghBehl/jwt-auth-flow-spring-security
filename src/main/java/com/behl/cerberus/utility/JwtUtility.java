@@ -28,6 +28,16 @@ import io.jsonwebtoken.impl.DefaultClaims;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Utility class for JWT (JSON Web Token) operations, responsible for handling
+ * JWT generation, signature verification, and extracting required claims from
+ * JWT tokens. It interacts with the application's token configuration
+ * properties to ensure correct token creation and validation.
+ * 
+ * @see com.behl.cerberus.configuration.TokenConfigurationProperties
+ * @see com.behl.cerberus.filter.JwtAuthenticationFilter
+ * @see com.behl.cerberus.entity.UserStatus
+ */
 @Component
 @RequiredArgsConstructor
 @EnableConfigurationProperties(TokenConfigurationProperties.class)
@@ -41,16 +51,41 @@ public class JwtUtility {
 	@Value("${spring.application.name}")
 	private String issuer;
 
+	/**
+	 * Extracts user's ID from a given JWT token signifying an authenticated
+	 * user.
+	 * 
+	 * @param token The JWT token from which to extract the user's ID.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return The authenticated user's unique identifier (ID) in UUID format.
+	 */
 	public UUID extractUserId(@NonNull final String token) {
 		final var audience = extractClaim(token, Claims::getAudience);
 		return UUID.fromString(audience);
 	}
 	
+	/**
+	 * Extracts given JWT token's unique identifier (JTI).
+	 * 
+	 * @param token The JWT token from which to extract the JTI.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return JTI (JWT Token Identifier) assigned to the JWT token.
+	 */
 	public String getJti(@NonNull final String token) {
 		return extractClaim(token, Claims::getId);
 	}
-	
-	public String generateAccessToken(final User user) {
+
+	/**
+	 * Generates an access token corresponding to provided user entity based on
+	 * configured settings. The generated access token can be used to perform tasks
+	 * on behalf of the user on subsequent HTTP calls to the application until it
+	 * expires or is revoked.
+	 * 
+	 * @param user The user for whom to generate an access token.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return The generated JWT access token.
+	 */
+	public String generateAccessToken(@NonNull final User user) {
 		final var jti = String.valueOf(UUID.randomUUID());
 		final var accessTokenValidity = tokenConfigurationProperties.getAccessToken().getValidity();
 		final var expiration = TimeUnit.MINUTES.toMillis(accessTokenValidity);
@@ -72,6 +107,14 @@ public class JwtUtility {
 				.signWith(SignatureAlgorithm.HS256, secretKey).compact();
 	}
 	
+	/**
+	 * Extracts Granted Authorities from the scp claim of a JWT token. The scp claim
+	 * contains space-separated permissions, which are transformed into a list of
+	 * Granted Authorities representing user permissions or roles.
+	 *
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return A List of GrantedAuthority denoting user permissions.
+	 */
 	public List<GrantedAuthority> getAuthority(@NonNull final String token){
 		final var scopes = extractClaim(token, claims -> claims.get(SCOPE_CLAIM_NAME, String.class));
 		return Arrays.stream(scopes.split(StringUtils.SPACE))
@@ -79,11 +122,28 @@ public class JwtUtility {
 					.collect(Collectors.toList());
 	}
 	
+	/**
+	 * Retrieves the expiration timestamp of a given JWT token, which indicates the
+	 * time after which the token would no longer be eligible for authenticating a
+	 * user with the system.
+	 * 
+	 * @param token The JWT token from which to extract the expiration timestamp.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>
+	 * @return The expiration timestamp.
+	 */
 	public LocalDateTime getExpirationTimestamp(@NonNull final String token) {
 		final var expiration = extractClaim(token, Claims::getExpiration);
 		return expiration.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime();
 	}
 	
+	/**
+	 * Calculates the <code>java.time.Duration</code> until a JWT token's
+	 * expiration.
+	 * 
+	 * @param token The JWT token for which to calculate the time until expiration.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>
+	 * @return The duration until token expiration.
+	 */
 	public Duration getTimeUntilExpiration(@NonNull final String token) {
 	    final var expirationTimestamp = extractClaim(token, Claims::getExpiration).toInstant();
 	    final var currentTimestamp = new Date().toInstant();

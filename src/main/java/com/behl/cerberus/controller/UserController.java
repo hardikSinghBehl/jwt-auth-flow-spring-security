@@ -21,12 +21,14 @@ import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = "/users")
+@Tag(name = "User Management", description = "Endpoints for managing user profile details")
 public class UserController {
 
 	private final UserService userService;

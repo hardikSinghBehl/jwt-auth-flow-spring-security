@@ -17,12 +17,14 @@ import com.behl.cerberus.utility.RefreshTokenHeaderProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = "/auth")
+@Tag(name = "Authentication", description = "Endpoints for user authentication and token management")
 public class AuthenticationController {
 
 	private final AuthenticationService authenticationService;

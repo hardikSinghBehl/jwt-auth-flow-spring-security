@@ -11,6 +11,13 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Utility class intended for managing data caching in the application. It
+ * interacts with provisioned redis cache and facilitates data save and
+ * retrieval operations.
+ * 
+ * @see com.behl.cerberus.configuration.RedisConfiguration
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
