@@ -24,7 +24,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultClaims;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Utility class for JWT (JSON Web Token) operations, responsible for handling
@@ -37,17 +36,20 @@ import lombok.RequiredArgsConstructor;
  * @see com.behl.cerberus.entity.UserStatus
  */
 @Component
-@RequiredArgsConstructor
 @EnableConfigurationProperties(TokenConfigurationProperties.class)
 public class JwtUtility {
-
-	private final TokenConfigurationProperties tokenConfigurationProperties;
 	
 	private static final String BEARER_PREFIX = "Bearer ";
 	private static final String SCOPE_CLAIM_NAME = "scp";
 
-	@Value("${spring.application.name}")
-	private String issuer;
+	private final TokenConfigurationProperties tokenConfigurationProperties;
+	private final String issuer;
+	
+	public JwtUtility(final TokenConfigurationProperties tokenConfigurationProperties,
+			@Value("${spring.application.name}") final String issuer) {
+		this.tokenConfigurationProperties = tokenConfigurationProperties;
+		this.issuer = issuer;
+	}
 
 	/**
 	 * Extracts user's ID from a given JWT token signifying an authenticated
