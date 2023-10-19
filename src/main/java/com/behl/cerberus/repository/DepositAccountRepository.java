@@ -10,6 +10,8 @@ import com.behl.cerberus.entity.DepositAccount;
 
 @Repository
 public interface DepositAccountRepository extends JpaRepository<DepositAccount, UUID> {
+	
+	boolean existsByUserId(final UUID userId);
 
 	Optional<DepositAccount> findByUserId(final UUID userId);
 

@@ -30,7 +30,7 @@ public class DepositAccountService {
 	private final DepositAccountRepository depositAccountRepository;
 
 	public void create(@NonNull final UUID userId) {
-		final var accountExists = depositAccountRepository.findByUserId(userId).isPresent();
+		final var accountExists = depositAccountRepository.existsByUserId(userId);
 		if (Boolean.TRUE.equals(accountExists)) {
 			throw new AccountAlreadyExistsException("Deposit Account already exists.");
 		}
