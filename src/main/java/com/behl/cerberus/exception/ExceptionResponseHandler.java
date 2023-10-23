@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -17,12 +18,14 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.behl.cerberus.dto.ExceptionResponseDto;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 @ControllerAdvice
 public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 	
 	private static final String FORBIDDEN_ERROR_MESSAGE = "Access Denied: You do not have sufficient privileges to access this resource.";
-
+	private static final String NOT_READABLE_REQUEST_ERROR_MESSAGE = "The request is malformed. Ensure the JSON structure is correct.";
+	
 	@ResponseBody
 	@ExceptionHandler(ResponseStatusException.class)
 	public ResponseEntity<ExceptionResponseDto<String>> responseStatusExceptionHandler(final ResponseStatusException exception) {
@@ -50,6 +53,24 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 		exceptionResponse.setStatus(HttpStatus.BAD_REQUEST.toString());
 		exceptionResponse.setDescription(description);
 
+		return ResponseEntity.badRequest().body(exceptionResponse);
+	}
+	
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException exception,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		final var exceptionResponse = new ExceptionResponseDto<String>();
+		exceptionResponse.setStatus(HttpStatus.BAD_REQUEST.toString());
+		String description = NOT_READABLE_REQUEST_ERROR_MESSAGE;
+
+		if (exception.getCause() instanceof InvalidFormatException) {
+			final var invalidFormatException  = (InvalidFormatException) exception.getCause();
+			final var fieldName = invalidFormatException.getPath().get(0).getFieldName();
+			final var invalidValue = String.valueOf(invalidFormatException.getValue());
+			description = String.format("Invalid value '%s' for '%s'.", invalidValue, fieldName);
+		}
+
+		exceptionResponse.setDescription(description);
 		return ResponseEntity.badRequest().body(exceptionResponse);
 	}
 
