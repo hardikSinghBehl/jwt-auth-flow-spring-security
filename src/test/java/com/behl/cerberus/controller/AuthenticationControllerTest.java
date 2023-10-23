@@ -1,109 +1,201 @@
 package com.behl.cerberus.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Optional;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
+import com.behl.cerberus.configuration.CustomAuthenticationEntryPoint;
+import com.behl.cerberus.configuration.SecurityConfiguration;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
+import com.behl.cerberus.exception.ExceptionResponseHandler;
+import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.service.AuthenticationService;
+import com.behl.cerberus.service.TokenRevocationService;
+import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenHeaderProvider;
 
-import net.bytebuddy.utility.RandomString;
+import io.swagger.v3.core.util.Json;
+import lombok.SneakyThrows;
 
+@WebMvcTest(controllers = AuthenticationController.class)
+@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class })
 class AuthenticationControllerTest {
 
-	private AuthenticationController authenticationController;
+	@Autowired
+	private MockMvc mockMvc;
+
+	@MockBean
 	private AuthenticationService authenticationService;
+
+	@SpyBean
 	private RefreshTokenHeaderProvider refreshTokenHeaderProvider;
 
-	@BeforeEach
-	void setUp() {
-		this.authenticationService = mock(AuthenticationService.class);
-		this.refreshTokenHeaderProvider = mock(RefreshTokenHeaderProvider.class);
-		this.authenticationController = new AuthenticationController(authenticationService, refreshTokenHeaderProvider);
-	}
+	@MockBean
+	private JwtUtility jwtUtility;
+
+	@MockBean
+	private TokenRevocationService tokenRevocationService;
 
 	@Test
-	void loginSuccess() {
-		// Prepare
-		var userLoginRequestDto = mock(UserLoginRequestDto.class);
-		var tokenSuccessResponseDto = mock(TokenSuccessResponseDto.class);
-		when(authenticationService.login(userLoginRequestDto)).thenReturn(tokenSuccessResponseDto);
+	@SneakyThrows
+	void shouldReturnUnauthorizedAgainstInvalidLoginCredentials() {
+		// prepare user login request
+		final var userLoginRequest = new UserLoginRequestDto();
+		userLoginRequest.setEmailId("mail@domain.ut");
+		userLoginRequest.setPassword("test-password");
 
-		// Call
-		final var response = authenticationController.login(userLoginRequestDto);
+		// mock service layer to throw InvalidLoginCredentialsException
+		when(authenticationService.login(refEq(userLoginRequest))).thenThrow(new InvalidLoginCredentialsException());
 
-		// Verify
-		assertThat(response).isNotNull();
-		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody()).isInstanceOf(TokenSuccessResponseDto.class);
-		assertThat(response.getBody()).isEqualTo(tokenSuccessResponseDto);
-		verify(authenticationService, times(1)).login(userLoginRequestDto);
+		// execute API request
+		final var apiPath = "/auth/login";
+		final var requestBody = Json.mapper().writeValueAsString(userLoginRequest);
+		mockMvc.perform(post(apiPath)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(requestBody))
+				.andExpect(status().isUnauthorized())
+				.andDo(print())
+				.andExpect(jsonPath("$.Status").value(HttpStatus.UNAUTHORIZED.toString()))
+				.andExpect(jsonPath("$.Description").value("Invalid login credentials provided"));
+
+		// verify mock interaction
+		verify(authenticationService).login(refEq(userLoginRequest));
 	}
-
+	
 	@Test
-	void invalidCredentialsGivenDuringLogin() {
-		// Prepare
-		final String errorMessage = "Invalid login credentials provided";
-		var userLoginRequestDto = mock(UserLoginRequestDto.class);
-		when(authenticationService.login(userLoginRequestDto))
-				.thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, errorMessage));
+	@SneakyThrows
+	void shouldReturnAccessTokenForValidLoginRequest() {
+		// prepare user login request
+		final var userLoginRequest = new UserLoginRequestDto();
+		userLoginRequest.setEmailId("mail@domain.ut");
+		userLoginRequest.setPassword("test-password");
+		
+		// prepare service layer success response
+		final var accessToken = "test-access-token";
+		final var refreshToken = "test-refresh-token";
+		final var tokenResponse = mock(TokenSuccessResponseDto.class);
+		when(tokenResponse.getAccessToken()).thenReturn(accessToken);
+		when(tokenResponse.getRefreshToken()).thenReturn(refreshToken);
+		when(authenticationService.login(refEq(userLoginRequest))).thenReturn(tokenResponse);
 
-		// Call and Verify
-		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationController.login(userLoginRequestDto));
-		assertThat(response.getMessage()).contains(errorMessage);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(authenticationService).login(userLoginRequestDto);
+		// execute API request
+		final var apiPath = "/auth/login";
+		final var requestBody = Json.mapper().writeValueAsString(userLoginRequest);
+		mockMvc.perform(post(apiPath)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(requestBody))
+				.andExpect(status().isOk())
+				.andDo(print())
+				.andExpect(jsonPath("$.AccessToken").value(accessToken))
+				.andExpect(jsonPath("$.RefreshToken").value(refreshToken));
+
+		// verify mock interaction
+		verify(authenticationService).login(refEq(userLoginRequest));
 	}
-
+	
 	@Test
-	void refreshTokenSuccess() {
-		// Prepare
-		final var refreshToken = RandomString.make();
-		var tokenSuccessResponseDto = mock(TokenSuccessResponseDto.class);
-		when(refreshTokenHeaderProvider.getRefreshToken()).thenReturn(Optional.of(refreshToken));
-		when(authenticationService.refreshToken(refreshToken)).thenReturn(tokenSuccessResponseDto);
+	@SneakyThrows
+	void shouldThrowBadRequestForMissingLoginDetails() {
+		// prepare incomplete user login request
+		final var userLoginRequest = new UserLoginRequestDto();
+		userLoginRequest.setEmailId("mail@domain.ut");
 
-		// Call
-		final var response = authenticationController.refreshToken();
+		// execute API request
+		final var apiPath = "/auth/login";
+		final var requestBody = Json.mapper().writeValueAsString(userLoginRequest);
+		mockMvc.perform(post(apiPath)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(requestBody))
+				.andExpect(status().isBadRequest())
+				.andDo(print())
+				.andExpect(jsonPath("$.Status").value(HttpStatus.BAD_REQUEST.toString()))
+				.andExpect(jsonPath("$.Description").isArray())
+				.andExpect(jsonPath("$.Description").value("password must not be empty"));
 
-		// Verify
-		assertThat(response).isNotNull();
-		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody()).isInstanceOf(TokenSuccessResponseDto.class);
-		assertThat(response.getBody()).isEqualTo(tokenSuccessResponseDto);
-		verify(authenticationService, times(1)).refreshToken(refreshToken);
+		// verify mock interaction
+		verify(authenticationService, times(0)).login(any(UserLoginRequestDto.class));
 	}
-
+	
 	@Test
-	void refreshTokenExpired() {
-		// Prepare
-		final String errorMessage = "Token expired";
-		final var refreshToken = RandomString.make();
-		when(refreshTokenHeaderProvider.getRefreshToken()).thenReturn(Optional.of(refreshToken));
-		when(authenticationService.refreshToken(refreshToken))
-				.thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, errorMessage));
-
-		// Call and Verify
-		final var response = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationController.refreshToken());
-		assertThat(response.getMessage()).contains(errorMessage);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-		verify(authenticationService, times(1)).refreshToken(refreshToken);
+	@SneakyThrows
+	void shouldThrowExceptionIfRefreshTokenHeaderNotPresentInRequestHeader() {
+		// execute API request without refresh token header
+		final var apiPath = "/auth/refresh";
+		mockMvc.perform(put(apiPath))
+				.andExpect(status().isUnauthorized())
+				.andDo(print())
+				.andExpect(jsonPath("$.Status").value(HttpStatus.UNAUTHORIZED.toString()))
+				.andExpect(jsonPath("$.Description").value("Authentication failure: Token missing, invalid, revoked or expired"));
+	}
+	
+	@Test
+	@SneakyThrows
+	void shouldThrowExceptionIfEmptyRefreshTokenHeaderPresentInRequestHeader() {		
+		// execute API request with empty refresh token header value
+		final var apiPath = "/auth/refresh";
+		mockMvc.perform(put(apiPath)
+				.header("X-Refresh-Token", StringUtils.EMPTY))
+				.andExpect(status().isUnauthorized())
+				.andDo(print())
+				.andExpect(jsonPath("$.Status").value(HttpStatus.UNAUTHORIZED.toString()))
+				.andExpect(jsonPath("$.Description").value("Authentication failure: Token missing, invalid, revoked or expired"));
+	}
+	
+	@Test
+	@SneakyThrows
+	void shouldReturnAccessTokenForValidRefreshToken() {		
+		// prepare service layer success response
+		final var accessToken = "test-access-token";
+		final var refreshToken = "test-refresh-token";
+		final var tokenResponse = mock(TokenSuccessResponseDto.class);
+		when(tokenResponse.getAccessToken()).thenReturn(accessToken);
+		when(authenticationService.refreshToken(refEq(refreshToken))).thenReturn(tokenResponse);
+		
+		// execute API request with refresh token header
+		final var apiPath = "/auth/refresh";
+		mockMvc.perform(put(apiPath)
+				.header("X-Refresh-Token", refreshToken))
+				.andExpect(status().isOk())
+				.andDo(print())
+				.andExpect(jsonPath("$.AccessToken").value(accessToken));
+	}
+	
+	@Test
+	@SneakyThrows
+	void shouldReturnUnauthorizedForExpiredRefreshToken() {		
+		// prepare service layer to throw expection for expired refresh token
+		final var refreshToken = "test-expired-refresh-token";
+		when(authenticationService.refreshToken(refEq(refreshToken))).thenThrow(new TokenVerificationException());
+		
+		// execute API request with refresh token header
+		final var apiPath = "/auth/refresh";
+		mockMvc.perform(put(apiPath)
+				.header("X-Refresh-Token", refreshToken))
+				.andExpect(status().isUnauthorized())
+				.andDo(print())
+				.andExpect(jsonPath("$.Status").value(HttpStatus.UNAUTHORIZED.toString()))
+				.andExpect(jsonPath("$.Description").value("Authentication failure: Token missing, invalid, revoked or expired"));
 	}
 
 }
