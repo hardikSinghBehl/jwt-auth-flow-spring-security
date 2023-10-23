@@ -1,168 +1,180 @@
 package com.behl.cerberus.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.behl.cerberus.configuration.TokenConfigurationProperties;
 import com.behl.cerberus.configuration.TokenConfigurationProperties.RefreshToken;
-import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
+import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.CacheManager;
 import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenGenerator;
 
 class AuthenticationServiceTest {
-
-	private JwtUtility jwtUtility;
-	private CacheManager cacheManager;
-	private UserRepository userRepository;
-	private PasswordEncoder passwordEncoder;
-	private RefreshTokenGenerator refreshTokenGenerator;
-	private TokenConfigurationProperties tokenConfigurationProperties;
 	
-	private AuthenticationService authenticationService;
-
-	@BeforeEach
-	void setUp() {
-		this.jwtUtility = mock(JwtUtility.class);
-		this.cacheManager = mock(CacheManager.class);
-		this.userRepository = mock(UserRepository.class);
-		this.passwordEncoder = mock(PasswordEncoder.class);
-		this.refreshTokenGenerator = mock(RefreshTokenGenerator.class);
-		this.tokenConfigurationProperties = mock(TokenConfigurationProperties.class);
-		this.authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, tokenConfigurationProperties);
-	}
+	private final JwtUtility jwtUtility = mock(JwtUtility.class);
+	private final CacheManager cacheManager = mock(CacheManager.class);
+	private final UserRepository userRepository = mock(UserRepository.class);
+	private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+	private final RefreshTokenGenerator refreshTokenGenerator = mock(RefreshTokenGenerator.class);
+	private final TokenConfigurationProperties tokenConfigurationProperties = mock(TokenConfigurationProperties.class);
+	
+	private final AuthenticationService authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, tokenConfigurationProperties);
 
 	@Test
-	void successfullLogin() {
-		// Prepare
-		final String encryptedPassword = "blablabla";
-		final String rawPassword = "secret";
-		final String emailId = "hehe@hoho.com";
-		final UUID userId = UUID.randomUUID();
-		var user = mock(User.class);
-		var userLoginRequestDto = mock(UserLoginRequestDto.class);
-		when(user.getId()).thenReturn(userId);
-		when(user.getPassword()).thenReturn(encryptedPassword);
-		when(userLoginRequestDto.getPassword()).thenReturn(rawPassword);
-		when(userLoginRequestDto.getEmailId()).thenReturn(emailId);
-		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
-		when(passwordEncoder.matches(rawPassword, encryptedPassword)).thenReturn(true);
+	void loginShouldThrowExceptionForNonRegisteredEmailId() {
+		// prepare login request
+		final var emailId = "unregistered@domain.ut";
+		final var userLoginRequest = mock(UserLoginRequestDto.class);
+		when(userLoginRequest.getEmailId()).thenReturn(emailId);
 		
-		final var refreshTokenProperties = mock(RefreshToken.class);
-		when(tokenConfigurationProperties.getRefreshToken()).thenReturn(refreshTokenProperties);
-		when(refreshTokenProperties.getValidity()).thenReturn(20);
-
-		final String accessToken = "test-refresh-token";
-		final String refreshToken = "test-refresh-token";
-		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-		when(refreshTokenGenerator.generate()).thenReturn(refreshToken);
-
-		// Call
-		final var response = authenticationService.login(userLoginRequestDto);
-
-		// Verify
-		assertThat(response).isNotNull();
-		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
-		assertThat(response.getAccessToken()).isEqualTo(accessToken);
-		assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
-		verify(userRepository, times(1)).findByEmailId(emailId);
-		verify(jwtUtility, times(1)).generateAccessToken(user);
-		verify(refreshTokenGenerator, times(1)).generate();
-		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
-	}
-
-	@Test
-	void loginUsingInvalidEmailId() {
-		// Prepare
-		final String emailId = "hehe@hoho.com";
-		final String errorMessage = "Invalid login credentials provided";
-		var userLoginRequestDto = mock(UserLoginRequestDto.class);
-		when(userLoginRequestDto.getEmailId()).thenReturn(emailId);
+		// set datasource to return no response for unregistered email-id
 		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.empty());
-
-		// Call and Verify
-		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationService.login(userLoginRequestDto));
-		assertThat(errorResponse.getMessage()).contains(errorMessage);
-		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(userRepository, times(1)).findByEmailId(emailId);
+		
+		// assert InvalidLoginCredentialsException is thrown for unregistered email-id
+		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(userLoginRequest));
+		
+		// verify mock interactions
+		verify(userRepository).findByEmailId(emailId);
 	}
-
+	
 	@Test
-	void loginUsingWrongPassword() {
-		// Prepare
-		final String encryptedPassword = "blablabla";
-		final String rawPassword = "secret";
-		final String emailId = "hehe@hoho.com";
-		final String errorMessage = "Invalid login credentials provided";
-		var user = mock(User.class);
-		var userLoginRequestDto = mock(UserLoginRequestDto.class);
-		when(user.getPassword()).thenReturn(encryptedPassword);
-		when(userLoginRequestDto.getPassword()).thenReturn(rawPassword);
-		when(userLoginRequestDto.getEmailId()).thenReturn(emailId);
+	void loginShouldThrowExceptionForInvalidPassword() {
+		// prepare login request
+		final var emailId = "mail@domain.ut";
+		final var password = "test-password";
+		final var userLoginRequest = mock(UserLoginRequestDto.class);
+		when(userLoginRequest.getEmailId()).thenReturn(emailId);
+		when(userLoginRequest.getPassword()).thenReturn(password);
+		
+		// prepare datasource response
+		final var encodedPassword = "test-encoded-password";
+		final var user = mock(User.class);
+		when(user.getPassword()).thenReturn(encodedPassword);
 		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
-		when(passwordEncoder.matches(rawPassword, encryptedPassword)).thenReturn(false);
+		
+		// set password validation to fail
+		when(passwordEncoder.matches(password, encodedPassword)).thenReturn(Boolean.FALSE);
+		
+		// assert InvalidLoginCredentialsException is thrown for invalid password
+		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(userLoginRequest));
 
-		// Call and Verify
-		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationService.login(userLoginRequestDto));
-		assertThat(errorResponse.getMessage()).contains(errorMessage);
-		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(userRepository, times(1)).findByEmailId(emailId);
-		verify(passwordEncoder, times(1)).matches(rawPassword, encryptedPassword);
+		// verify mock interactions
+		verify(userRepository).findByEmailId(emailId);
+		verify(passwordEncoder).matches(password, encodedPassword);
 	}
-
+	
 	@Test
-	void refreshTokenWithExpiredRefreshToken() {
-		// Prepare
-		final String refreshToken = "Refresh token JWT";
-		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.empty());
-
-		// Call and Verify
-		final var errorResponse = Assertions.assertThrows(ResponseStatusException.class,
-				() -> authenticationService.refreshToken(refreshToken));
-		assertThat(errorResponse.getReason()).isEqualTo("Authentication failure: Token missing, invalid, revoked or expired");
-		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-		verify(cacheManager, times(1)).fetch(eq(refreshToken), eq(UUID.class));
-	}
-
-	@Test
-	void tokenRefreshalSuccess() {
-		// Prepare
-		final String refreshToken = "Refresh token JWT";
-		final UUID userId = UUID.randomUUID();
+	void shouldReturnTokenResponseForValidLoginCredentials() {
+		// prepare login request
+		final var emailId = "mail@domain.ut";
+		final var password = "test-password";
+		final var userLoginRequest = mock(UserLoginRequestDto.class);
+		when(userLoginRequest.getEmailId()).thenReturn(emailId);
+		when(userLoginRequest.getPassword()).thenReturn(password);
+		
+		// prepare datasource response
+		final var userId = UUID.randomUUID();
+		final var encodedPassword = "test-encoded-password";
 		final var user = mock(User.class);
 		when(user.getId()).thenReturn(userId);
-		when(cacheManager.fetch(eq(refreshToken), eq(UUID.class))).thenReturn(Optional.of(userId));
-		when(userRepository.getReferenceById(userId)).thenReturn(user);
-		final String accessToken = "Access token JWT";
+		when(user.getPassword()).thenReturn(encodedPassword);
+		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
+		
+		// set password validation to pass
+		when(passwordEncoder.matches(password, encodedPassword)).thenReturn(Boolean.TRUE);
+
+		// set token generation
+		final var accessToken = "test-access-token";
+		final var refreshToken = "test-refresh-token";
 		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
-
-		// Call
-		final var response = authenticationService.refreshToken(refreshToken);
-
-		// Verify
+		when(refreshTokenGenerator.generate()).thenReturn(refreshToken);
+		
+		// handle refresh token storage in cache
+		final var refreshTokenValidity = new Random().nextInt(1, 100);
+		final var refreshTokenConfiguration = mock(RefreshToken.class);
+		when(refreshTokenConfiguration.getValidity()).thenReturn(refreshTokenValidity);
+		when(tokenConfigurationProperties.getRefreshToken()).thenReturn(refreshTokenConfiguration);
+		doNothing().when(cacheManager).save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));		
+	
+		// invoke method under test
+		final var response = authenticationService.login(userLoginRequest);
+		
+		// verify correctness of response values
 		assertThat(response).isNotNull();
-		assertThat(response).isInstanceOf(TokenSuccessResponseDto.class);
-		assertThat(response.getAccessToken()).isEqualTo(accessToken);
-		verify(jwtUtility, times(1)).generateAccessToken(user);
+		assertThat(response.getAccessToken()).isNotBlank().isEqualTo(accessToken);
+		assertThat(response.getRefreshToken()).isNotBlank().isEqualTo(refreshToken);
+		
+		// verify mock interactions
+		verify(userRepository).findByEmailId(emailId);
+		verify(passwordEncoder).matches(password, encodedPassword);
+		verify(jwtUtility).generateAccessToken(user);
+		verify(refreshTokenGenerator).generate();
+		verify(cacheManager).save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
 	}
+	
+	@Test
+	void tokenRefreshShouldThrowExceptionForInvalidOrExpiredRefreshToken() {
+		// set up cache to return no response for invalid refresh token
+		final var refreshToken = "test-refresh-token";
+		when(cacheManager.fetch(refreshToken, UUID.class)).thenReturn(Optional.empty());
+		
+		// assert TokenVerificationException is thrown for invalid refresh token
+		assertThrows(TokenVerificationException.class, () -> authenticationService.refreshToken(refreshToken));
+		
+		// verify mock interactions
+		verify(cacheManager).fetch(refreshToken, UUID.class);
+	}
+	
+	@Test
+	void shouldReturnNewAccessTokenForValidRefreshToken() {
+		// set up cache to return stored userId corresponding to valid refresh token
+		final var userId = UUID.randomUUID();
+		final var refreshToken = "test-refresh-token";
+		when(cacheManager.fetch(refreshToken, UUID.class)).thenReturn(Optional.of(userId));
 
+		// set up datasource to return user entity corresponding to userId
+		final var user = mock(User.class);
+		when(userRepository.getReferenceById(userId)).thenReturn(user);
+		
+		// set token generation
+		final var accessToken = "test-access-token";
+		when(jwtUtility.generateAccessToken(user)).thenReturn(accessToken);
+		
+		// invoke method under test
+		final var response = authenticationService.refreshToken(refreshToken);
+		
+		// verify existence of new access token in response
+		assertThat(response).isNotNull();
+		assertThat(response.getAccessToken()).isNotBlank().isEqualTo(accessToken);
+		
+		// verify mock interactions
+		verify(cacheManager).fetch(refreshToken, UUID.class);
+		verify(userRepository).getReferenceById(userId);
+		verify(jwtUtility).generateAccessToken(user);
+	}
+	
+	@Test
+	void shouldThrowIllegalArgumentExceptionForNullArguments() {
+		assertThrows(IllegalArgumentException.class, () -> authenticationService.login(null));
+		assertThrows(IllegalArgumentException.class, () -> authenticationService.refreshToken(null));
+	}
+	
+	
 }
