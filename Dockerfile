@@ -1,6 +1,7 @@
 FROM maven:3.8.4-openjdk-17 as backend
 WORKDIR /backend
 COPY pom.xml .
+COPY lombok.config .
 RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean install
