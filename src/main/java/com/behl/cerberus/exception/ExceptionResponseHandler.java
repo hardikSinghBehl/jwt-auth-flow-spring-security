@@ -1,6 +1,7 @@
 package com.behl.cerberus.exception;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
@@ -18,8 +19,14 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.behl.cerberus.dto.ExceptionResponseDto;
+import com.fasterxml.jackson.databind.JsonMappingException.Reference;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @ControllerAdvice
 public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 	
@@ -59,15 +66,26 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException exception,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		final var exceptionResponse = new ExceptionResponseDto<String>();
+		final var exceptionResponse = new ExceptionResponseDto<AtomicReference<String>>();
 		exceptionResponse.setStatus(HttpStatus.BAD_REQUEST.toString());
-		String description = NOT_READABLE_REQUEST_ERROR_MESSAGE;
+		final var description = new AtomicReference<String>(NOT_READABLE_REQUEST_ERROR_MESSAGE);
 
-		if (exception.getCause() instanceof InvalidFormatException) {
-			final var invalidFormatException  = (InvalidFormatException) exception.getCause();
-			final var fieldName = invalidFormatException.getPath().get(0).getFieldName();
-			final var invalidValue = String.valueOf(invalidFormatException.getValue());
-			description = String.format("Invalid value '%s' for '%s'.", invalidValue, fieldName);
+		if (exception.getCause() instanceof InvalidFormatException invalidFormatException) {
+			invalidFormatException.getPath().stream().map(Reference::getFieldName).findFirst().ifPresent(fieldName -> {
+				final var invalidValue = invalidFormatException.getValue();
+				final var errorMessage = String.format("Invalid value '%s' for '%s'.", invalidValue, fieldName);
+				description.set(errorMessage);
+			});
+		} else if (exception.getCause() instanceof UnrecognizedPropertyException unrecognizedPropertyException) {
+			unrecognizedPropertyException.getPath().stream().map(Reference::getFieldName).findFirst().ifPresent(fieldName -> {
+				final var errorMessage = String.format("Unrecognized property '%s' detected.", fieldName);
+				description.set(errorMessage);
+			});
+		} else if (exception.getCause() instanceof MismatchedInputException mismatchedInputException) {
+			mismatchedInputException.getPath().stream().map(Reference::getFieldName).findFirst().ifPresent(fieldName -> {
+				final var errorMessage = String.format("Invalid data type for field '%s'.", fieldName);
+				description.set(errorMessage);
+			});
 		}
 
 		exceptionResponse.setDescription(description);
@@ -77,6 +95,7 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> serverExceptionHandler(final Exception exception) {
+		log.error("An Exception occurred", exception);
 		final var exceptionResponse = new ExceptionResponseDto<String>();
 		exceptionResponse.setStatus(HttpStatus.NOT_IMPLEMENTED.toString());
 		exceptionResponse.setDescription("Something went wrong.");
