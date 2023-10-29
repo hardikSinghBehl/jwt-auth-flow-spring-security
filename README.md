@@ -1,44 +1,96 @@
-### JWT Authorization flow using Spring Security
-
-##### A reference proof-of-concept that leverages Spring-security to implement JWT based Authentication and Authorization.
-##### 🛠 upgraded to Spring Boot 3 and Spring Security 6 🛠
+### JWT Authentication and Authorization Flow using Spring Security
+##### A reference proof-of-concept that leverages Spring-security to implement JWT based authentication, API access control and Token revocation.
+##### 🛠 upgraded to Spring Boot 3 and Spring Security 6 🛠 
 
 ### Important classes
-* [JwtAuthenticationFilter.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/filter/JwtAuthenticationFilter.java)
+* [JwtAuthenticationFilter.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java)
 * [SecurityConfiguration.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java)
-* [ApiPathExclusion.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/constant/ApiPathExclusion.java)
-* [CORSFilter.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/filter/CORSFilter.java)
-* [JwtUtility.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/utility/JwtUtility.java)
-* [JwtConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/properties/JwtConfigurationProperties.java)
+* [ApiPathExclusionConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/ApiPathExclusionConfigurationProperties.java)
+* [TokenConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/TokenConfigurationProperties.java)
+* [JwtUtility.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/JwtUtility.java)
+* [TokenRevocationService.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/service/TokenRevocationService.java)
 
-Any request to an endpoint that is specified to be authenticated will be intercepted by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/filter/JwtAuthenticationFilter.java) which is configured in the [SecurityConfiguration](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java), Any APIs that need to be made public can be specified under the appropriate HTTP method in [ApiPathExclusion](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/constant/ApiPathExclusion.java).
+Any request to a secured endpoint is intercepted by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java), which is added to the security filter chain and configured in the [SecurityConfiguration](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java). The custom filter holds the responsibility for verifying the authenticity of the incoming access token and populating the security context. 
 
-Inside JwtAuthenticationFilter, the token from request header `Authorization` is extracted and decrypted, the corresponding user in database is fetched and is loaded onto the SecurityContextHolder object which signifies the current logged-in user for that HTTP request. The user details are added as part of custom claims in generated JWT. [refer [JwtUtility](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/security/utility/JwtUtility.java)]
+Any API that needs to be made public can be configured in the active `.yml` file, the values will be mapped to [ApiPathExclusionConfigurationProperties](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/ApiPathExclusionConfigurationProperties.java) and referenced by the application. Requests to the configured API paths will not be evaluated by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java). Below is a sample snippet declaring public/non-secured APIs in `application.yaml` file.
+```
+com:
+  behl:
+    cerberus:
+      unsecured:
+        api-path:
+          swagger-v3: true
+          post:
+            - /users
+            - /auth/login
+          put: 
+            - /auth/refresh
+```
 
-The secret key which is to be used for JWT generation and decryption, along with Access-token and Refresh-token validity can be specified in `application.properties` file corresponding to [JwtConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/properties/JwtConfigurationProperties.java). Below is a sample `.properties` file snippet that can be used to configure the required parameters.
+#### Token Generation and Configuration
+The application uses Access Tokens (JWT) and Refresh Tokens, both of which are returned to the client upon successful authentication. JWTs are signed and verified using the HS256 symmetric key algorithm wherein a single secret-key is used, with these operations handled by [JwtUtility](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/JwtUtility.java). Refresh tokens are random 256-bit values generated by [RefreshTokenGenerator](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/RefreshTokenGenerator.java) and stored in a cache against the user identifier by [AuthenticationService](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/service/AuthenticationService.java).
+
+Token validity/expiration (In minutes) and the symmetric secret-key can be configured in the active `.yml` file. The configured values are populated in [TokenConfigurationProperties](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/TokenConfigurationProperties.java) and referenced by the application. Below is a sample snippet.
 
 ```
-# JWT Configuration
-com.behl.cerberus.jwt.secret-key=093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
-com.behl.cerberus.jwt.access-token.validity=30
-com.behl.cerberus.jwt.refresh-token.validity=5
+com:
+  behl:
+    cerberus:
+      token:
+        access-token:
+          secret-key: ${JWT_SECRET_KEY}
+          validity: 30
+        refresh-token:
+          validity: 120
+```
+#### API Access Control
+
+Access control is imposed by the application based on the user's current status within the system. The corresponding permissions are embedded into the generated JWT which allows for stateless access control and authorization process. 
+
+For detailed explanation, this [Document](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/documentation/API_ACCESS_CONTROL.md) can be referenced.
+
+#### Token Revocation
+
+When a user's status is demoted to one with fewer privileges, there is a need to invalidate the existing Access Token since it retains the previous enhanced scopes. The [implementation](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/service/TokenRevocationService.java) leverages the JWT Token Identifier (JTI) and a caching mechanism to achieve this. Incoming Bearer tokens are validated by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java) to ensure they've not been revoked. By revoking access tokens promptly, the system maintains the integrity of access control.
+
+For detailed explanation, this [Document](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/documentation/TOKEN_REVOCATION.md) can be referenced.
+
+#### Authentication Failure
+
+Spring security exceptions are commenced at the AuthenticationEntryPoint. A custom implementation, [CustomAuthenticationEntryPoint](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/CustomAuthenticationEntryPoint.java) is configured in [SecurityConfiguration](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java) which assumes any exceptions thrown by the authentication filters are due to token verification failure. Hence, the implementation instantiates [TokenVerificationException](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/exception/TokenVerificationException.java) and delegates the responsibility of exception handling to HandlerExceptionResolver. The exception finally gets evaluated by [ExceptionResponseHandler](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/exception/ExceptionResponseHandler.java) and approprate exception response is returned to the client. 
+
+The below API response is returned by the application in the event of a token verification failure during security evaluation.
+
+```
+{
+  "Status": "401 UNAUTHORIZED",
+  "Description": "Authentication failure: Token missing, invalid, revoked or expired"
+}
 ```
 
-----
+The below API response is returned when authentication succeeds i.e Access Token is validated and Spring context is populated successfully, However the token does not have the permission required to access the API. 
 
+```
+{
+  "Status": "403 FORBIDDEN",
+  "Description": "Access Denied: You do not have sufficient privileges to access this resource."
+}
+```
+If the user's permissions have changed, the client can leverage available refresh token to request a new JWT, reflecting the new permissions that the user has obtained.
+
+---
 ### Local Setup
+The below given commands can be executed in the project's base directory to build an image and start required container(s). Docker compose will initiate a MySQL and Redis container as well, with the backend swagger-ui accessible at `http://localhost:8080/swagger-ui.html`
 
-Run the below given commands in the projects base directory to create an image and start a container from the given `Dockerfile` 
-
 ```
-docker build -t jwt-auth-flow-spring-security .
+sudo docker-compose build
 ```
 ```
-docker container run -d -p 8080:8080 jwt-auth-flow-spring-security
+sudo docker-compose up -d
 ```
 
 ---
 
-### Demonstration screen recording
+### Visual Walkthrough
 
-https://user-images.githubusercontent.com/69693621/177231299-5d927ea8-04f3-4cd4-935c-de88a8479d69.mov
+https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/assets/69693621/54ef4877-49b9-4112-9f85-9b9abda74068
