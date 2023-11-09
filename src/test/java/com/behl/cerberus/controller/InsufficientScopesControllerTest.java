@@ -24,13 +24,14 @@ import com.behl.cerberus.configuration.SecurityConfiguration;
 import com.behl.cerberus.exception.ExceptionResponseHandler;
 import com.behl.cerberus.service.DepositAccountService;
 import com.behl.cerberus.service.TokenRevocationService;
+import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
 import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 import com.behl.cerberus.utility.JwtUtility;
 
 import lombok.SneakyThrows;
 
 @WebMvcTest(controllers = DepositAccountController.class)
-@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class })
+@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class, ApiEndpointSecurityInspector.class })
 class InsufficientScopesControllerTest {
 	
 	@Autowired

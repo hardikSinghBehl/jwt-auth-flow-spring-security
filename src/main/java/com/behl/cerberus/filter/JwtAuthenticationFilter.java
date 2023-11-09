@@ -1,25 +1,17 @@
 package com.behl.cerberus.filter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.service.TokenRevocationService;
+import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
 import com.behl.cerberus.utility.JwtUtility;
 
-import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,18 +34,17 @@ import lombok.SneakyThrows;
  * request is destined to a non-secured public API endpoint.
  *
  * @see com.behl.cerberus.configuration.SecurityConfiguration
- * @see com.behl.cerberus.configuration.ApiPathExclusionConfigurationProperties
+ * @see com.behl.cerberus.utility.ApiEndpointSecurityInspector
  * @see com.behl.cerberus.service.TokenRevocationService
  * @see com.behl.cerberus.utility.JwtUtility
  */
 @Component
 @RequiredArgsConstructor
-@EnableConfigurationProperties(ApiPathExclusionConfigurationProperties.class)
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtUtility jwtUtils;
 	private final TokenRevocationService tokenRevocationService; 
-	private final ApiPathExclusionConfigurationProperties apiPathExclusionConfigurationProperties;
+	private final ApiEndpointSecurityInspector apiEndpointSecurityInspector;
 	
 	private static final String AUTHORIZATION_HEADER = "Authorization";
 	private static final String BEARER_PREFIX = "Bearer ";
@@ -61,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	@SneakyThrows
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
-		final var unsecuredApiBeingInvoked = isInvocationToUnsecuredApi(request);
+		final var unsecuredApiBeingInvoked = apiEndpointSecurityInspector.isUnsecureRequest(request);
 		
 		if (Boolean.FALSE.equals(unsecuredApiBeingInvoked)) {
 			final var authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
@@ -83,27 +74,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			}
 		}
 		filterChain.doFilter(request, response);
-	}
-	
-	private boolean isInvocationToUnsecuredApi(final HttpServletRequest request) {
-	    final var requestHttpMethod = HttpMethod.valueOf(request.getMethod());
-	    var unsecuredApiPaths = getUnsecuredApiPaths(requestHttpMethod);
-	    unsecuredApiPaths = Optional.ofNullable(unsecuredApiPaths).orElseGet(ArrayList::new);
-
-	    return unsecuredApiPaths.stream().anyMatch(apiPath -> new AntPathMatcher().match(apiPath, request.getRequestURI()));
-	}
-	
-	private List<String> getUnsecuredApiPaths(final HttpMethod httpMethod) {
-	    switch (httpMethod) {
-	        case GET:
-	            return apiPathExclusionConfigurationProperties.getGet();
-	        case POST:
-	            return apiPathExclusionConfigurationProperties.getPost();
-	        case PUT:
-	            return apiPathExclusionConfigurationProperties.getPut();
-	        default:
-	            return Collections.emptyList();
-	    }
 	}
 
 }

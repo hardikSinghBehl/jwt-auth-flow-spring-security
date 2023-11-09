@@ -45,6 +45,7 @@ import com.behl.cerberus.exception.AccountAlreadyExistsException;
 import com.behl.cerberus.exception.ExceptionResponseHandler;
 import com.behl.cerberus.service.TokenRevocationService;
 import com.behl.cerberus.service.UserService;
+import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
 import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 import com.behl.cerberus.utility.JwtUtility;
 
@@ -52,7 +53,7 @@ import io.swagger.v3.core.util.Json;
 import lombok.SneakyThrows;
 
 @WebMvcTest(controllers = UserController.class)
-@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class })
+@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class, ApiEndpointSecurityInspector.class })
 class UserControllerTest {
 
 	@Autowired

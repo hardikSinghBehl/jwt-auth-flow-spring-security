@@ -32,6 +32,7 @@ import com.behl.cerberus.exception.InvalidLoginCredentialsException;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.service.AuthenticationService;
 import com.behl.cerberus.service.TokenRevocationService;
+import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
 import com.behl.cerberus.utility.JwtUtility;
 import com.behl.cerberus.utility.RefreshTokenHeaderProvider;
 
@@ -39,7 +40,7 @@ import io.swagger.v3.core.util.Json;
 import lombok.SneakyThrows;
 
 @WebMvcTest(controllers = AuthenticationController.class)
-@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class })
+@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class, ApiEndpointSecurityInspector.class })
 class AuthenticationControllerTest {
 
 	@Autowired

@@ -34,6 +34,7 @@ import com.behl.cerberus.dto.IdentityVerificationRequestDto;
 import com.behl.cerberus.exception.ExceptionResponseHandler;
 import com.behl.cerberus.service.IdentityVerificationService;
 import com.behl.cerberus.service.TokenRevocationService;
+import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
 import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 import com.behl.cerberus.utility.JwtUtility;
 
@@ -41,7 +42,7 @@ import io.swagger.v3.core.util.Json;
 import lombok.SneakyThrows;
 
 @WebMvcTest(controllers = IdentityVerificationController.class)
-@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class })
+@Import({ ExceptionResponseHandler.class, SecurityConfiguration.class, CustomAuthenticationEntryPoint.class, ApiEndpointSecurityInspector.class })
 class IdentityVerificationControllerTest {
 	
 	@Autowired
