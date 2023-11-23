@@ -19,7 +19,6 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<lombok.version>1.18.26</lombok.version>
 	</properties>
 
 	<developers>
