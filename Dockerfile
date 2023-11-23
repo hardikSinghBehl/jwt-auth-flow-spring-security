@@ -1,4 +1,4 @@
-FROM maven:3.8.4-openjdk-17 as backend
+FROM maven:3.9-amazoncorretto-21 as backend
 WORKDIR /backend
 COPY pom.xml .
 COPY lombok.config .
@@ -7,7 +7,7 @@ COPY src ./src
 RUN mvn clean install
 RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
-FROM openjdk:17
+FROM openjdk:21
 ARG DEPENDENCY=/backend/target/dependency
 COPY --from=backend ${DEPENDENCY}/BOOT-INF/lib /app/lib
 COPY --from=backend ${DEPENDENCY}/META-INF /app/META-INF
