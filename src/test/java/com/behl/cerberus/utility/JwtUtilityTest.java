@@ -17,6 +17,9 @@ import com.behl.cerberus.configuration.TokenConfigurationProperties.AccessToken;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.entity.UserStatus;
 
+import io.jsonwebtoken.io.Encoders;
+import net.bytebuddy.utility.RandomString;
+
 class JwtUtilityTest {
 	
 	private static final String UUID_REGEX = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
@@ -37,7 +40,7 @@ class JwtUtilityTest {
 		
 		// configure token configuration
 		final var accessTokenValidity = 1;
-		final var secretKey = "test-secret-key";
+		final var secretKey = Encoders.BASE64.encode(RandomString.make(32).getBytes());
 		final var accessTokenConfiguration = mock(AccessToken.class);
 		when(tokenConfigurationProperties.getAccessToken()).thenReturn(accessTokenConfiguration);
 		when(accessTokenConfiguration.getValidity()).thenReturn(accessTokenValidity);
