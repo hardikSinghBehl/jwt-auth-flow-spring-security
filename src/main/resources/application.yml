@@ -16,6 +16,9 @@ spring:
       host: ${REDIS_HOSTNAME}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
     
 com:
   behl:
