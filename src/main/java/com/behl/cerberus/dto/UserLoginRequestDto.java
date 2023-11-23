@@ -13,6 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy.class)
+@Schema(title = "UserLoginRequest", accessMode = Schema.AccessMode.WRITE_ONLY)
 public class UserLoginRequestDto {
 
 	@NotBlank(message = "email-id must not be empty")

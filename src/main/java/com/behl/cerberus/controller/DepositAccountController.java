@@ -13,12 +13,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.behl.cerberus.dto.DepositAccountDetailDto;
+import com.behl.cerberus.dto.ExceptionResponseDto;
 import com.behl.cerberus.dto.TransactionDetailDto;
 import com.behl.cerberus.dto.TransactionRequestDto;
 import com.behl.cerberus.service.DepositAccountService;
 import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,8 +41,10 @@ public class DepositAccountController {
     @PostMapping
     @Operation(summary = "Creates a Deposit Account", description = "Creates a new deposit account corresponding to the logged-in user")
     @ApiResponses(value = { 
-            @ApiResponse(responseCode = "201", description = "Deposit Account created successfully"),
-            @ApiResponse(responseCode = "409", description = "Deposit Account already exists corresponding to the logged-in user") })
+            @ApiResponse(responseCode = "201", description = "Deposit Account created successfully",
+            		content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "409", description = "Deposit Account already exists corresponding to the logged-in user",
+            		content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
     public ResponseEntity<HttpStatus> createDepositAccount() {
         final var userId = authenticatedUserIdProvider.getUserId();
         depositAccountService.create(userId);
@@ -58,8 +63,10 @@ public class DepositAccountController {
     @PostMapping(value = "/transactions", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Process a transaction", description = "Processes transaction against users deposit account")
     @ApiResponses(value = { 
-            @ApiResponse(responseCode = "200", description = "Transaction processed successfully"),
-            @ApiResponse(responseCode = "404", description = "Users deposit account must be created prior to processing transaction(s)") })
+            @ApiResponse(responseCode = "200", description = "Transaction processed successfully",
+            		content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "404", description = "Users deposit account must be created prior to processing transaction(s)",
+            		content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
     public ResponseEntity<HttpStatus> processTransaction(@Valid @RequestBody final TransactionRequestDto transactionRequest) {
         final var userId = authenticatedUserIdProvider.getUserId();
         depositAccountService.processTransaction(userId, transactionRequest);

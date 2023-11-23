@@ -14,6 +14,8 @@ import com.behl.cerberus.service.IdentityVerificationService;
 import com.behl.cerberus.utility.AuthenticatedUserIdProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,7 +32,8 @@ public class IdentityVerificationController {
 	
 	@PostMapping(value = "/identity-verification", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Verify user identity", description = "Performs identity verification check on logged-in user")
-	@ApiResponse(responseCode = "200", description = "User identity verification check successfully passed")
+	@ApiResponse(responseCode = "200", description = "User identity verification check successfully passed", 
+			content = @Content(schema = @Schema(implementation = Void.class)))
 	@PreAuthorize("hasAuthority('useridentity.verify')")
 	public ResponseEntity<HttpStatus> verifyUserIdentity(@Valid @RequestBody final IdentityVerificationRequestDto identityVerificationRequest) {
 		final var userId = authenticatedUserIdProvider.getUserId();

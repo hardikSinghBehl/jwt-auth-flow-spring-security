@@ -17,6 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy.class)
+@Schema(title = "TransactionRequest", accessMode = Schema.AccessMode.WRITE_ONLY)
 public class TransactionRequestDto {
 
 	@NotNull(message = "Amount must not be empty")
