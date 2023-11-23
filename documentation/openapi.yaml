@@ -1,0 +1,407 @@
+openapi: 3.0.1
+info:
+  title: Cerberus
+  description: Java Backend application using Spring-security to implement JWT based
+    Authentication and Authorization
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Local Backend Server
+tags:
+- name: Authentication
+  description: Endpoints for user authentication and token management
+- name: User Management
+  description: Endpoints for managing user profile details
+- name: Identity Verification
+  description: Endpoints for identity verification
+- name: Deposit Accounts
+  description: Endpoints for managing deposit accounts
+paths:
+  /users:
+    get:
+      tags:
+      - User Management
+      summary: Retrieves current logged-in user's account details
+      description: Private endpoint which retreives user account details against the
+        Access-token JWT provided in headers
+      operationId: retrieveUser
+      responses:
+        "200":
+          description: User account details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailDto'
+    put:
+      tags:
+      - User Management
+      summary: Updates user profile details
+      description: Updates profile details corresponding to logged-in user
+      operationId: updateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdationRequestDto'
+        required: true
+      responses:
+        "200":
+          description: User account details updated successfully
+    post:
+      tags:
+      - User Management
+      summary: Creates a user account
+      description: Registers a unique user record in the system corresponding to the
+        provided information
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreationRequestDto'
+        required: true
+      responses:
+        "201":
+          description: User account created successfully
+        "409":
+          description: User account with provided email-id already exists
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ExceptionResponseDto'
+  /auth/refresh:
+    put:
+      tags:
+      - Authentication
+      summary: Refreshes Access-Token for a user
+      description: Provides a new Access-token against the user for which the non
+        expired refresh-token is provided
+      operationId: refreshToken
+      responses:
+        "403":
+          description: Refresh token has expired. Failed to refresh access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponseDto'
+        "200":
+          description: Access-token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSuccessResponseDto'
+  /users/identity-verification:
+    post:
+      tags:
+      - Identity Verification
+      summary: Verify user identity
+      description: Performs identity verification check on logged-in user
+      operationId: verifyUserIdentity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityVerificationRequestDto'
+        required: true
+      responses:
+        "200":
+          description: User identity verification check successfully passed
+  /deposit-accounts:
+    get:
+      tags:
+      - Deposit Accounts
+      summary: Get Deposit Account Details
+      description: Retrieves details of the authenticated user's deposit account
+      operationId: getDepositAccountDetails
+      responses:
+        "200":
+          description: Deposit Account details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositAccountDetailDto'
+    post:
+      tags:
+      - Deposit Accounts
+      summary: Creates a Deposit Account
+      description: Creates a new deposit account corresponding to the logged-in user
+      operationId: createDepositAccount
+      responses:
+        "409":
+          description: Deposit Account already exists corresponding to the logged-in
+            user
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ExceptionResponseDto'
+        "201":
+          description: Deposit Account created successfully
+  /deposit-accounts/transactions:
+    get:
+      tags:
+      - Deposit Accounts
+      summary: Fetches all transactions
+      description: Retrieves all transactions corresponding to user's deposit account
+      operationId: getTransactions
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionDetailDto'
+    post:
+      tags:
+      - Deposit Accounts
+      summary: Process a transaction
+      description: Processes transaction against users deposit account
+      operationId: processTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequestDto'
+        required: true
+      responses:
+        "200":
+          description: Transaction processed successfully
+        "404":
+          description: Users deposit account must be created prior to processing transaction(s)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ExceptionResponseDto'
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Logs in user into the system
+      description: Returns Access-token and Refresh-token on successfull authentication
+        which provides access to protected endpoints
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequestDto'
+        required: true
+      responses:
+        "200":
+          description: Authentication successfull
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSuccessResponseDto'
+        "401":
+          description: Bad credentials provided. Failed to authenticate user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponseDto'
+  /users/deactivate:
+    delete:
+      tags:
+      - User Management
+      summary: Deactivates current logged-in user's profile
+      description: "Deactivates user's profile: can only be undone by praying to a\
+        \ higher power or contacting our vanished customer support."
+      operationId: deactivateUser
+      responses:
+        "204":
+          description: User profile successfully deactivated
+components:
+  schemas:
+    UserUpdationRequestDto:
+      title: UserUpdationRequest
+      required:
+      - FirstName
+      type: object
+      properties:
+        FirstName:
+          type: string
+          description: first-name of user
+          example: Hardik
+        LastName:
+          type: string
+          description: last-name of user
+          example: Behl
+      writeOnly: true
+    ExceptionResponseDto:
+      title: Error
+      type: object
+      properties:
+        Status:
+          type: string
+        Description:
+          type: object
+      readOnly: true
+    TokenSuccessResponseDto:
+      title: TokenSuccessResponse
+      type: object
+      properties:
+        AccessToken:
+          type: string
+        RefreshToken:
+          type: string
+      readOnly: true
+    UserCreationRequestDto:
+      title: UserCreationRequest
+      required:
+      - EmailId
+      - FirstName
+      - Password
+      type: object
+      properties:
+        FirstName:
+          type: string
+          description: first-name of user
+          example: Hardik
+        LastName:
+          type: string
+          description: last-name of user
+          example: Behl
+        EmailId:
+          type: string
+          description: email-id of user
+          example: hardik.behl7444@gmail.com
+        Password:
+          type: string
+          description: secure password to enable user login
+          example: somethingSecure
+      writeOnly: true
+    IdentityVerificationRequestDto:
+      title: IdentityVerificationRequest
+      required:
+      - City
+      - DateOfBirth
+      - PostalCode
+      - State
+      - StreetAddress
+      type: object
+      properties:
+        DateOfBirth:
+          type: string
+          description: Date of birth in the format YYYY-MM-DD
+          format: date
+          example: 1970-01-15
+        StreetAddress:
+          type: string
+          description: Current residential street address
+          example: 12/3A Main Street
+        City:
+          type: string
+          description: Current residential city
+          example: New Delhi
+        State:
+          type: string
+          description: Current residential state
+          example: Delhi
+        PostalCode:
+          pattern: "^\\d{6}$"
+          type: string
+          description: Current residential postal code
+          example: "001002"
+      writeOnly: true
+    TransactionRequestDto:
+      title: TransactionRequest
+      required:
+      - Amount
+      - Currency
+      - Type
+      type: object
+      properties:
+        Amount:
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+          example: 100.0
+        Currency:
+          type: string
+          example: USD
+          enum:
+          - USD
+        Type:
+          type: string
+          example: DEPOSIT
+          enum:
+          - DEPOSIT
+          - WITHDRAW
+      writeOnly: true
+    UserLoginRequestDto:
+      title: UserLoginRequest
+      required:
+      - EmailId
+      - Password
+      type: object
+      properties:
+        EmailId:
+          type: string
+          description: email-id associated with user account already created in the
+            system
+          example: hardik.behl7444@gmail.com
+        Password:
+          type: string
+          description: password corresponding to provided email-id
+          example: somethingSecure
+      writeOnly: true
+    UserDetailDto:
+      title: UserDetail
+      type: object
+      properties:
+        FirstName:
+          type: string
+        LastName:
+          type: string
+        EmailId:
+          type: string
+        Status:
+          type: string
+        DateOfBirth:
+          type: string
+          format: date
+        CreatedAt:
+          type: string
+          format: date-time
+      readOnly: true
+    DepositAccountDetailDto:
+      title: DepositAccountDetail
+      type: object
+      properties:
+        Balance:
+          type: number
+        CreatedAt:
+          type: string
+          format: date-time
+      readOnly: true
+    TransactionDetailDto:
+      title: TransactionDetail
+      type: object
+      properties:
+        Amount:
+          type: number
+        Currency:
+          type: string
+          enum:
+          - USD
+        Type:
+          type: string
+          enum:
+          - DEPOSIT
+          - WITHDRAW
+        Timestamp:
+          type: string
+          format: date-time
+      readOnly: true
+  securitySchemes:
+    Bearer_Authentication:
+      type: http
+      scheme: Bearer
+    Refresh_Token_Header:
+      type: apiKey
+      name: X-Refresh-Token
+      in: header
+security:
+- Bearer_Authentication: []
+  Refresh_Token_Header: []
