@@ -3,11 +3,14 @@ package com.behl.cerberus.utility;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.crypto.SecretKey;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +24,8 @@ import com.behl.cerberus.entity.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.DefaultClaims;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import lombok.NonNull;
 
 /**
@@ -57,11 +60,16 @@ public class JwtUtility {
 	 * 
 	 * @param token The JWT token from which to extract the user's ID.
 	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @throws IllegalStateException if provided token does not contain an audience claim
 	 * @return The authenticated user's unique identifier (ID) in UUID format.
 	 */
 	public UUID extractUserId(@NonNull final String token) {
-		final var audience = extractClaim(token, Claims::getAudience);
-		return UUID.fromString(audience);
+		final var audiences = extractClaim(token, Claims::getAudience);
+		if (audiences != null && !audiences.isEmpty()) {
+			final var audience = audiences.iterator().next();
+			return UUID.fromString(audience);
+		}
+		throw new IllegalStateException("No audience claim found in given token");
 	}
 	
 	/**
@@ -87,24 +95,29 @@ public class JwtUtility {
 	 */
 	public String generateAccessToken(@NonNull final User user) {
 		final var jti = String.valueOf(UUID.randomUUID());
+		final var audience = String.valueOf(user.getId());
 		final var accessTokenValidity = tokenConfigurationProperties.getAccessToken().getValidity();
 		final var expiration = TimeUnit.MINUTES.toMillis(accessTokenValidity);
-		final var secretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
 		final var currentTimestamp = new Date(System.currentTimeMillis());
 		final var expirationTimestamp = new Date(System.currentTimeMillis() + expiration);
 		final var scopes = user.getUserStatus().getScopes().stream().collect(Collectors.joining(StringUtils.SPACE));
 		
-		final var claims = new DefaultClaims();
+		final var encodedSecretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
+		final var secretKey = getSecretKey(encodedSecretKey);
+		
+		final var claims = new HashMap<String, String>();
 		claims.put(SCOPE_CLAIM_NAME, scopes);
 		
 		return Jwts.builder()
-				.setClaims(claims)
-				.setId(jti)
-				.setIssuer(issuer)
-				.setIssuedAt(currentTimestamp)
-				.setExpiration(expirationTimestamp)
-				.setAudience(String.valueOf(user.getId()))
-				.signWith(SignatureAlgorithm.HS256, secretKey).compact();
+				.claims(claims)
+				.id(jti)
+				.issuer(issuer)
+				.issuedAt(currentTimestamp)
+				.expiration(expirationTimestamp)
+				.audience().add(audience)
+				.and()
+				.signWith(secretKey, Jwts.SIG.HS256)
+				.compact();
 	}
 	
 	/**
@@ -136,11 +149,39 @@ public class JwtUtility {
 	    return Duration.between(currentTimestamp, expirationTimestamp);
 	}
 
-	private <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {
-		final var secretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
-		final var santizedToken = token.replace(BEARER_PREFIX, StringUtils.EMPTY);
-		final var claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(santizedToken).getBody();
+	/**
+	 * Extracts a specific claim from the provided JWT token. This method verifies
+	 * the token's issuer and signature before extracting the claim.
+	 * 
+	 * @param token JWT token from which the desired claim is to be extracted.
+	 * @param claimsResolver function of {@link Claims} to execute. example: {@code Claims::getId}.
+	 * @throws IllegalArgumentException if any provided argument is <code>null</code>
+	 * @return The extracted claim from the JWT token.
+	 */
+	private <T> T extractClaim(@NonNull final String token, @NonNull final Function<Claims, T> claimsResolver) {
+		final var encodedSecretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
+		final var secretKey = getSecretKey(encodedSecretKey);
+		final var sanitizedToken = token.replace(BEARER_PREFIX, StringUtils.EMPTY);
+		final var claims = Jwts.parser()
+				.requireIssuer(issuer)
+				.verifyWith(secretKey)
+				.build()
+				.parseSignedClaims(sanitizedToken)
+				.getPayload();
 		return claimsResolver.apply(claims);
+	}
+
+	/**
+	 * Constructs an instance of {@link SecretKey} from the provided Base64-encoded
+	 * secret key string.
+	 * 
+	 * @param encodedKey The Base64-encoded secret key string.
+	 * @throws IllegalArgumentException if encodedKey is <code>null</code>
+	 * @return A {@link SecretKey} instance for JWT signing and verification.
+	 */
+	private SecretKey getSecretKey(@NonNull final String encodedKey) {
+		final var decodedKey = Decoders.BASE64.decode(encodedKey);
+		return Keys.hmacShaKeyFor(decodedKey);
 	}
 
 }
