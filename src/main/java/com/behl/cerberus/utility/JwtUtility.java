@@ -139,9 +139,9 @@ public class JwtUtility {
 	 * @return The duration until token expiration.
 	 */
 	public Duration getTimeUntilExpiration(@NonNull final String token) {
-	    final var expirationTimestamp = extractClaim(token, Claims::getExpiration).toInstant();
-	    final var currentTimestamp = new Date().toInstant();
-	    return Duration.between(currentTimestamp, expirationTimestamp);
+		final var expirationTimestamp = extractClaim(token, Claims::getExpiration).toInstant();
+		final var currentTimestamp = new Date().toInstant();
+		return Duration.between(currentTimestamp, expirationTimestamp);
 	}
 
 	/**
@@ -209,9 +209,13 @@ public class JwtUtility {
 	 * @return The sanitized key as a single string.
 	 */
 	private String sanitizeKey(@NonNull final String key) {
-	    return key.lines()
-	    		.filter(line -> !line.contains("BEGIN") && !line.contains("END"))
-	    		.collect(Collectors.joining());
+		return key
+	    		.replace("-----BEGIN PUBLIC KEY-----", StringUtils.EMPTY)
+				.replace("-----END PUBLIC KEY-----", StringUtils.EMPTY)
+				.replace("-----BEGIN PRIVATE KEY-----", StringUtils.EMPTY)
+				.replace("-----END PRIVATE KEY-----", StringUtils.EMPTY)
+				.replaceAll("\\n", StringUtils.EMPTY)
+				.replaceAll("\\s", StringUtils.EMPTY);
 	}
 
 }
