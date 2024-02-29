@@ -31,13 +31,21 @@ public class TokenConfigurationProperties {
 	public class AccessToken {
 		
 		/**
-		 * The symmetric secret-key used for both signing and verifying the signature of
-		 * received access token(s) to ensure authenticity.
+		 * The RSA private key to be used for signing JWT tokens. The key should be in
+		 * PKCS#8 format.
 		 * 
 		 * @see com.behl.cerberus.utility.JwtUtility
 		 */
 		@NotBlank
-		private String secretKey;
+		private String privateKey;
+		
+		/**
+		 * The RSA public key to be used for verifying the signature of JWT tokens.
+		 * 
+		 * @see com.behl.cerberus.utility.JwtUtility
+		 */
+		@NotBlank
+		private String publicKey;
 
 		/**
 		 * The validity period of JWT access token(s) in minutes, post which the token

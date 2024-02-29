@@ -171,7 +171,7 @@ class UserControllerTest {
 		final var emailId = "mail@domain.ut";
 		final var userStatus = UserStatus.APPROVED.getValue();
 		final var dateOfBirth = LocalDate.now();
-		final var createdAt = LocalDateTime.now();
+		final var createdAt = LocalDateTime.parse("1999-12-25T04:00:00.140521");
 		final var userDetail = mock(UserDetailDto.class);
 		
 		when(userDetail.getFirstName()).thenReturn(firstName);

@@ -250,7 +250,7 @@ class DepositAccountControllerTest {
 		
 		// mock deposit account details fetch call
 		final var balance = new BigDecimal(new Random().nextInt(1, 100));
-		final var createdAt = LocalDateTime.now();
+		final var createdAt = LocalDateTime.parse("1999-12-25T04:00:00.140521");
 		final var depositAccountDetails = mock(DepositAccountDetailDto.class);
 		when(depositAccountDetails.getBalance()).thenReturn(balance);
 		when(depositAccountDetails.getCreatedAt()).thenReturn(createdAt);
