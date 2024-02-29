@@ -42,7 +42,8 @@ services:
       REDIS_HOSTNAME: redis-cache
       REDIS_PORT: 6379
       REDIS_PASSWORD: Password@123
-      JWT_SECRET_KEY: 093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926
+      JWT_PRIVATE_KEY:
+      JWT_PUBLIC_KEY:
     networks:
       - cerberus
     restart: on-failure:5
