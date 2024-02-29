@@ -1,5 +1,10 @@
 package com.behl.cerberus.utility;
 
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
@@ -9,8 +14,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.crypto.SecretKey;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,8 +28,8 @@ import com.behl.cerberus.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 
 /**
  * Utility class for JWT (JSON Web Token) operations, responsible for handling
@@ -55,35 +58,6 @@ public class JwtUtility {
 	}
 
 	/**
-	 * Extracts user's ID from a given JWT token signifying an authenticated
-	 * user.
-	 * 
-	 * @param token The JWT token from which to extract the user's ID.
-	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
-	 * @throws IllegalStateException if provided token does not contain an audience claim
-	 * @return The authenticated user's unique identifier (ID) in UUID format.
-	 */
-	public UUID extractUserId(@NonNull final String token) {
-		final var audiences = extractClaim(token, Claims::getAudience);
-		if (audiences != null && !audiences.isEmpty()) {
-			final var audience = audiences.iterator().next();
-			return UUID.fromString(audience);
-		}
-		throw new IllegalStateException("No audience claim found in given token");
-	}
-	
-	/**
-	 * Extracts given JWT token's unique identifier (JTI).
-	 * 
-	 * @param token The JWT token from which to extract the JTI.
-	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
-	 * @return JTI (JWT Token Identifier) assigned to the JWT token.
-	 */
-	public String getJti(@NonNull final String token) {
-		return extractClaim(token, Claims::getId);
-	}
-
-	/**
 	 * Generates an access token corresponding to provided user entity based on
 	 * configured settings. The generated access token can be used to perform tasks
 	 * on behalf of the user on subsequent HTTP calls to the application until it
@@ -102,9 +76,6 @@ public class JwtUtility {
 		final var expirationTimestamp = new Date(System.currentTimeMillis() + expiration);
 		final var scopes = user.getUserStatus().getScopes().stream().collect(Collectors.joining(StringUtils.SPACE));
 		
-		final var encodedSecretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
-		final var secretKey = getSecretKey(encodedSecretKey);
-		
 		final var claims = new HashMap<String, String>();
 		claims.put(SCOPE_CLAIM_NAME, scopes);
 		
@@ -116,10 +87,34 @@ public class JwtUtility {
 				.expiration(expirationTimestamp)
 				.audience().add(audience)
 				.and()
-				.signWith(secretKey, Jwts.SIG.HS256)
+				.signWith(getPrivateKey(), Jwts.SIG.RS512)
 				.compact();
 	}
 	
+	/**
+	 * Extracts user's ID from a given JWT token signifying an authenticated
+	 * user.
+	 * 
+	 * @param token The JWT token from which to extract the user's ID.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return The authenticated user's unique identifier (ID) in UUID format.
+	 */
+	public UUID extractUserId(@NonNull final String token) {
+		final var audience = extractClaim(token, Claims::getAudience).iterator().next();
+		return UUID.fromString(audience);
+	}
+	
+	/**
+	 * Extracts given JWT token's unique identifier (JTI).
+	 * 
+	 * @param token The JWT token from which to extract the JTI.
+	 * @throws IllegalArgumentException if provided argument is <code>null</code>.
+	 * @return JTI (JWT Token Identifier) assigned to the JWT token.
+	 */
+	public String getJti(@NonNull final String token) {
+		return extractClaim(token, Claims::getId);
+	}
+
 	/**
 	 * Extracts Granted Authorities from the scp claim of a JWT token. The scp claim
 	 * contains space-separated permissions, which are transformed into a list of
@@ -151,7 +146,8 @@ public class JwtUtility {
 
 	/**
 	 * Extracts a specific claim from the provided JWT token. This method verifies
-	 * the token's issuer and signature before extracting the claim.
+	 * the token's issuer and signature using the configured public key 
+	 * before extracting the claim.
 	 * 
 	 * @param token JWT token from which the desired claim is to be extracted.
 	 * @param claimsResolver function of {@link Claims} to execute. example: {@code Claims::getId}.
@@ -159,29 +155,63 @@ public class JwtUtility {
 	 * @return The extracted claim from the JWT token.
 	 */
 	private <T> T extractClaim(@NonNull final String token, @NonNull final Function<Claims, T> claimsResolver) {
-		final var encodedSecretKey = tokenConfigurationProperties.getAccessToken().getSecretKey();
-		final var secretKey = getSecretKey(encodedSecretKey);
 		final var sanitizedToken = token.replace(BEARER_PREFIX, StringUtils.EMPTY);
 		final var claims = Jwts.parser()
 				.requireIssuer(issuer)
-				.verifyWith(secretKey)
+				.verifyWith(getPublicKey())
 				.build()
 				.parseSignedClaims(sanitizedToken)
 				.getPayload();
 		return claimsResolver.apply(claims);
 	}
-
+	
 	/**
-	 * Constructs an instance of {@link SecretKey} from the provided Base64-encoded
-	 * secret key string.
+	 * Retrieves the configured RSA private key and converts it into
+	 * {@link PrivateKey} object to be used for JWT signing. The configured private
+	 * key must be in PKCS#8 format.
 	 * 
-	 * @param encodedKey The Base64-encoded secret key string.
-	 * @throws IllegalArgumentException if encodedKey is <code>null</code>
-	 * @return A {@link SecretKey} instance for JWT signing and verification.
+	 * @return {@link PrivateKey} object for signing generated JWT token.
 	 */
-	private SecretKey getSecretKey(@NonNull final String encodedKey) {
-		final var decodedKey = Decoders.BASE64.decode(encodedKey);
-		return Keys.hmacShaKeyFor(decodedKey);
+	@SneakyThrows
+	private PrivateKey getPrivateKey() {
+		final var privateKey = tokenConfigurationProperties.getAccessToken().getPrivateKey();
+		final var sanitizedPrivateKey = sanitizeKey(privateKey);
+
+		final var decodedPrivateKey = Decoders.BASE64.decode(sanitizedPrivateKey);
+		final var spec = new PKCS8EncodedKeySpec(decodedPrivateKey);
+		
+		return KeyFactory.getInstance("RSA").generatePrivate(spec);
+	}
+	
+	/**
+	 * Retrieves the configured RSA public key and converts it into
+	 * {@link PublicKey} object to be used for JWT signature verification.
+	 * 
+	 * @return {@link PublicKey} object for verifying JWT signature.
+	 */
+	@SneakyThrows
+	private PublicKey getPublicKey() {
+		final var publicKey = tokenConfigurationProperties.getAccessToken().getPublicKey();
+		final var sanitizedPublicKey = sanitizeKey(publicKey);
+		
+		final var decodedPublicKey = Decoders.BASE64.decode(sanitizedPublicKey);
+		final var spec = new X509EncodedKeySpec(decodedPublicKey);
+		
+		return KeyFactory.getInstance("RSA").generatePublic(spec);
+	}
+	
+	/**
+	 * Sanitizes the provided key by removing header, footer and new line 
+	 * separators. The method works for both public and private key pairs.
+	 * 
+	 * @param key The key to be sanitized.
+	 * @throws IllegalArgumentException if the provided key is <code>null</code>.
+	 * @return The sanitized key as a single string.
+	 */
+	private String sanitizeKey(@NonNull final String key) {
+	    return key.lines()
+	    		.filter(line -> !line.contains("BEGIN") && !line.contains("END"))
+	    		.collect(Collectors.joining());
 	}
 
 }

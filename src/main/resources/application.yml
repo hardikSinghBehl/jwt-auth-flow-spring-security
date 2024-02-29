@@ -33,7 +33,8 @@ com:
             - /auth/refresh
       token:
         access-token:
-          secret-key: ${JWT_SECRET_KEY}
+          private-key: ${JWT_PRIVATE_KEY}
+          public-key: ${JWT_PUBLIC_KEY}
           validity: 30
         refresh-token:
           validity: 120

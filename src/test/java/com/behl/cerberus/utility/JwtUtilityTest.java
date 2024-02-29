@@ -3,10 +3,12 @@ package com.behl.cerberus.utility;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.Base64;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,7 @@ import com.behl.cerberus.configuration.TokenConfigurationProperties.AccessToken;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.entity.UserStatus;
 
-import io.jsonwebtoken.io.Encoders;
-import net.bytebuddy.utility.RandomString;
+import io.jsonwebtoken.Jwts;
 
 class JwtUtilityTest {
 	
@@ -26,7 +27,7 @@ class JwtUtilityTest {
 	private static final String JWT_STRUCTURE_REGEX = "^[^.]+\\.[^.]+\\.[^.]+$";
 	
 	private final TokenConfigurationProperties tokenConfigurationProperties = mock(TokenConfigurationProperties.class);
-    private final static String issuer = "unit-test-issuer";
+	private final static String issuer = "unit-test-issuer";
 	private final JwtUtility jwtUtility = new JwtUtility(tokenConfigurationProperties, issuer);
 			
 	@Test
@@ -40,18 +41,21 @@ class JwtUtilityTest {
 		
 		// configure token configuration
 		final var accessTokenValidity = 1;
-		final var secretKey = Encoders.BASE64.encode(RandomString.make(32).getBytes());
+		final var keyPair = Jwts.SIG.RS512.keyPair().build();
+		final var privateKey = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
+		final var publicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
 		final var accessTokenConfiguration = mock(AccessToken.class);
 		when(tokenConfigurationProperties.getAccessToken()).thenReturn(accessTokenConfiguration);
 		when(accessTokenConfiguration.getValidity()).thenReturn(accessTokenValidity);
-		when(accessTokenConfiguration.getSecretKey()).thenReturn(secretKey);
+		when(accessTokenConfiguration.getPrivateKey()).thenReturn(privateKey);
+		when(accessTokenConfiguration.getPublicKey()).thenReturn(publicKey);
 		
 		// Generate access token for user entity
 		final var accessToken = jwtUtility.generateAccessToken(user);
 		
 		// Validate the generated access token and verify mock interactions
 		assertThat(accessToken).isNotBlank().matches(JWT_STRUCTURE_REGEX);
-		verify(accessTokenConfiguration).getSecretKey();
+		verify(accessTokenConfiguration).getPrivateKey();
 		verify(accessTokenConfiguration).getValidity();
 		verify(user).getId();
 		verify(user).getUserStatus();
@@ -60,7 +64,10 @@ class JwtUtilityTest {
 		final var extractedUserId = jwtUtility.extractUserId(accessToken);
 		final var extractedJti = jwtUtility.getJti(accessToken);
 		final var extractedAuthorities = jwtUtility.getAuthority(accessToken);
-	    final var timeUntilExpiration = jwtUtility.getTimeUntilExpiration(accessToken);
+		final var timeUntilExpiration = jwtUtility.getTimeUntilExpiration(accessToken);
+	    
+	    // Assert public key fetch invocation
+		verify(accessTokenConfiguration, times(4)).getPublicKey();
 
 	    // Assert validity of extracted user ID
 		assertThat(extractedUserId)
@@ -81,9 +88,9 @@ class JwtUtilityTest {
 			.containsExactlyElementsOf(userStatus.getScopes().stream().map(SimpleGrantedAuthority::new).toList());
 		
 		// Assert that the time until token expiration is within the configured validity
-	    assertThat(timeUntilExpiration)
-	    	.isNotNull()
-	    	.isLessThan(Duration.ofMinutes(accessTokenValidity));
+		assertThat(timeUntilExpiration)
+			.isNotNull()
+			.isLessThan(Duration.ofMinutes(accessTokenValidity));
 	}
 	
 	@Test
