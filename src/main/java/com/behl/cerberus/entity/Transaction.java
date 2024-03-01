@@ -41,12 +41,12 @@ public class Transaction {
 	@Column(name = "amount", nullable = false)
 	private BigDecimal amount;
 
-	@Column(name = "deposit_account_id", nullable = true)
+	@Column(name = "deposit_account_id", nullable = false)
 	private UUID accountId;
 
 	@Setter(AccessLevel.NONE)
-	@OneToOne(fetch = FetchType.EAGER, optional = true)
-	@JoinColumn(name = "deposit_account_id", nullable = true, insertable = false, updatable = false)
+	@OneToOne(fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "deposit_account_id", nullable = false, insertable = false, updatable = false)
 	private DepositAccount depositAccount;
 
 	@Setter(AccessLevel.NONE)

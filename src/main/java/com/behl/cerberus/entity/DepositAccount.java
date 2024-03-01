@@ -31,12 +31,12 @@ public class DepositAccount {
 	@Column(name = "balance", nullable = false)
 	private BigDecimal balance;
 
-	@Column(name = "user_id", nullable = true)
+	@Column(name = "user_id", nullable = false)
 	private UUID userId;
 
 	@Setter(AccessLevel.NONE)
-	@OneToOne(fetch = FetchType.EAGER, optional = true)
-	@JoinColumn(name = "user_id", nullable = true, insertable = false, updatable = false)
+	@OneToOne(fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
 	private User user;
 
 	@Setter(AccessLevel.NONE)
