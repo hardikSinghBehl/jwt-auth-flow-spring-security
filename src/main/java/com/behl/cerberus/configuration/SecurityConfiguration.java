@@ -47,6 +47,7 @@ public class SecurityConfiguration {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final ApiPathExclusionConfigurationProperties apiPathExclusionConfigurationProperties;
+	
 	private static final List<String> SWAGGER_V3_PATHS = List.of("/swagger-ui**/**", "/v3/api-docs**/**");
 
 	@Bean
@@ -58,6 +59,7 @@ public class SecurityConfiguration {
 		
 		if (Boolean.TRUE.equals(apiPathExclusionConfigurationProperties.isSwaggerV3())) {
 			unsecuredGetEndpoints.addAll(SWAGGER_V3_PATHS);
+			apiPathExclusionConfigurationProperties.setGet(unsecuredGetEndpoints);
 		}
 		
 		http
