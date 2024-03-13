@@ -5,27 +5,26 @@
 ### Key Components
 * [JwtAuthenticationFilter.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java)
 * [SecurityConfiguration.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java)
-* [ApiPathExclusionConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/ApiPathExclusionConfigurationProperties.java)
+* [ApiEndpointSecurityInspector.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/ApiEndpointSecurityInspector.java)
 * [TokenConfigurationProperties.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/TokenConfigurationProperties.java)
 * [JwtUtility.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/JwtUtility.java)
 * [TokenRevocationService.java](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/service/TokenRevocationService.java)
 
 Any request to a secured endpoint is intercepted by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java), which is added to the security filter chain and configured in the [SecurityConfiguration](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/SecurityConfiguration.java). The custom filter holds the responsibility for verifying the authenticity of the incoming access token and populating the security context. 
 
-Any API that needs to be made public can be configured in the active `.yml` file, the values will be mapped to [ApiPathExclusionConfigurationProperties](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/ApiPathExclusionConfigurationProperties.java) and referenced by the application. Requests to the configured API paths will not be evaluated by the [JwtAuthenticationFilter](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/filter/JwtAuthenticationFilter.java). Below is a sample snippet declaring public/non-secured APIs in `application.yaml` file.
+### Public API declaration
 
-```yaml
-com:
-  behl:
-    cerberus:
-      unsecured:
-        api-path:
-          swagger-v3: true
-          post:
-            - /users
-            - /auth/login
-          put: 
-            - /auth/refresh
+Any API that needs to be made public can be annotated with [@PublicEndpoint](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/configuration/PublicEndpoint.java). Requests to the configured API paths will not evaluated by the custom security filter with the logic being governed by [ApiEndpointSecurityInspector](https://github.com/hardikSinghBehl/jwt-auth-flow-spring-security/blob/master/src/main/java/com/behl/cerberus/utility/ApiEndpointSecurityInspector.java).
+
+Below is a sample controller method declared as public which will be exempted from authentication checks:
+
+```java
+@PublicEndpoint
+@GetMapping(value = "/api/v1/something")
+public ResponseEntity<Something> getSomething() {
+    var something = someService.fetch();
+    return ResponseEntity.ok(something);
+}
 ```
 
 ### Token Generation and Configuration

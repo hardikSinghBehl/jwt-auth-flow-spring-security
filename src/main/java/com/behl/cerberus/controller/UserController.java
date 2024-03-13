@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.behl.cerberus.configuration.PublicEndpoint;
 import com.behl.cerberus.dto.ExceptionResponseDto;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
@@ -37,6 +38,7 @@ public class UserController {
 	private final UserService userService;
 	private final AuthenticatedUserIdProvider authenticatedUserIdProvider;
 
+	@PublicEndpoint
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Creates a user account", description = "Registers a unique user record in the system corresponding to the provided information")
 	@ApiResponses(value = { 

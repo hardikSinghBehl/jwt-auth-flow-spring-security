@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.behl.cerberus.configuration.PublicEndpoint;
 import com.behl.cerberus.dto.ExceptionResponseDto;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
@@ -33,6 +34,7 @@ public class AuthenticationController {
 	private final AuthenticationService authenticationService;
 	private final RefreshTokenHeaderProvider refreshTokenHeaderProvider;
 
+	@PublicEndpoint
 	@PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Logs in user into the system", description = "Returns Access-token and Refresh-token on successfull authentication which provides access to protected endpoints")
 	@ApiResponses(value = { 
@@ -44,6 +46,7 @@ public class AuthenticationController {
 		return ResponseEntity.ok(tokenResponse);
 	}
 
+	@PublicEndpoint
 	@PutMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Refreshes Access-Token for a user", description = "Provides a new Access-token against the user for which the non expired refresh-token is provided")
 	@ApiResponses(value = { 
