@@ -20,14 +20,6 @@ spring:
 com:
   behl:
     cerberus:
-      unsecured:
-        api-path:
-          swagger-v3: true
-          post:
-            - /users
-            - /auth/login
-          put: 
-            - /auth/refresh
       token:
         access-token:
           private-key: ${JWT_PRIVATE_KEY}
@@ -36,6 +28,7 @@ com:
         refresh-token:
           validity: 120
       open-api:
+        enabled: true
         api-version: 1.0.0
         title: Cerberus
         description: Java Backend application using Spring-security to implement JWT based Authentication and Authorization
