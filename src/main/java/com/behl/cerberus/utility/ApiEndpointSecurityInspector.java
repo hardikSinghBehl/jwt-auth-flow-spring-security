@@ -39,6 +39,7 @@ public class ApiEndpointSecurityInspector {
 
 	private final RequestMappingHandlerMapping requestHandlerMapping;
 	private final OpenApiConfigurationProperties openApiConfigurationProperties;
+	
 	private static final List<String> SWAGGER_V3_PATHS = List.of("/swagger-ui**/**", "/v3/api-docs**/**");
 	
 	@Getter
