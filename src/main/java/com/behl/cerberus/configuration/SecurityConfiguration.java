@@ -1,5 +1,7 @@
 package com.behl.cerberus.configuration;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,6 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.behl.cerberus.filter.JwtAuthenticationFilter;
 import com.behl.cerberus.utility.ApiEndpointSecurityInspector;
@@ -47,7 +52,7 @@ public class SecurityConfiguration {
 	@SneakyThrows
 	public SecurityFilterChain configure(final HttpSecurity http)  {
 		http
-			.cors(corsConfigurer -> corsConfigurer.disable())
+			.cors(corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()))
 			.csrf(csrfConfigurer -> csrfConfigurer.disable())
 			.exceptionHandling(exceptionConfigurer -> exceptionConfigurer.authenticationEntryPoint(customAuthenticationEntryPoint))
 			.sessionManagement(sessionConfigurer -> sessionConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -66,6 +71,17 @@ public class SecurityConfiguration {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
+	}
+	
+	private CorsConfigurationSource corsConfigurationSource() {
+		final var corsConfiguration = new CorsConfiguration();
+		corsConfiguration.setAllowedOrigins(List.of("*"));
+		corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		corsConfiguration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Origin", "Content-Type", "Accept"));
+
+		final var corsConfigurationSource = new UrlBasedCorsConfigurationSource();
+		corsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
+		return corsConfigurationSource;
 	}
 
 }
