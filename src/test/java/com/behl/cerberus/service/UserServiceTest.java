@@ -14,6 +14,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.password.CompromisedPasswordChecker;
+import org.springframework.security.authentication.password.CompromisedPasswordDecision;
+import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.behl.cerberus.dto.UserCreationRequestDto;
@@ -28,7 +31,8 @@ class UserServiceTest {
 	private final UserRepository userRepository = mock(UserRepository.class);
 	private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 	private final TokenRevocationService tokenRevocationService = mock(TokenRevocationService.class);
-	private final UserService userService = new UserService(userRepository, passwordEncoder, tokenRevocationService);
+	private final CompromisedPasswordChecker compromisedPasswordChecker = mock(CompromisedPasswordChecker.class);
+	private final UserService userService = new UserService(userRepository, passwordEncoder, tokenRevocationService, compromisedPasswordChecker);
 
 	@Test
 	void userCreationShouldThrowExceptionForDuplicateEmailId() {
@@ -47,6 +51,30 @@ class UserServiceTest {
 	}
 	
 	@Test
+	void userCreationShouldThrowExceptionForCompromisedPassword() {
+		// prepare user creation request
+		final var emailId = "mail@domain.ut";
+		final var password = "compromisedPassword";
+		final var userCreationRequest = mock(UserCreationRequestDto.class);
+		when(userCreationRequest.getEmailId()).thenReturn(emailId);
+		when(userCreationRequest.getPassword()).thenReturn(password);
+
+		// set datasource to evaluate non duplicate emailid
+		when(userRepository.existsByEmailId(emailId)).thenReturn(Boolean.FALSE);
+		
+		// set compromised password check failure
+		final var compromisedPasswordDecision = mock(CompromisedPasswordDecision.class);
+		when(compromisedPasswordDecision.isCompromised()).thenReturn(Boolean.TRUE);
+		when(compromisedPasswordChecker.check(password)).thenReturn(compromisedPasswordDecision);
+
+		// invoke method under test and verify mock interactions
+		final var exception = assertThrows(CompromisedPasswordException.class, () -> userService.create(userCreationRequest));
+		assertThat(exception.getMessage()).isEqualTo("The provided password is compromised and cannot be used for account creation.");
+		verify(userRepository).existsByEmailId(emailId);
+		verify(compromisedPasswordChecker).check(password);
+	}
+	
+	@Test
 	void shouldCreateUserEntityForValidUserCreationRequest() {
 		// prepare user creation request
 		final var emailId = "mail@domain.ut";
@@ -62,6 +90,11 @@ class UserServiceTest {
 		// set datasource to evaluate non duplicate emailid
 		when(userRepository.existsByEmailId(emailId)).thenReturn(Boolean.FALSE);
 		
+		// set compromised password check success
+		final var compromisedPasswordDecision = mock(CompromisedPasswordDecision.class);
+		when(compromisedPasswordDecision.isCompromised()).thenReturn(Boolean.FALSE);
+		when(compromisedPasswordChecker.check(password)).thenReturn(compromisedPasswordDecision);
+		
 		// set password encoding
 		final var encodedPassword = "test-encoded-password";
 		when(passwordEncoder.encode(password)).thenReturn(encodedPassword);
@@ -71,6 +104,7 @@ class UserServiceTest {
 
 		// verify mock interactions
 		verify(userRepository).existsByEmailId(emailId);
+		verify(compromisedPasswordChecker).check(password);
 		verify(passwordEncoder).encode(password);
 		verify(userRepository).save(any(User.class));
 	}

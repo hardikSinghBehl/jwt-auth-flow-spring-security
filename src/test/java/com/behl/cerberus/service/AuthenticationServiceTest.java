@@ -13,13 +13,16 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.password.CompromisedPasswordChecker;
+import org.springframework.security.authentication.password.CompromisedPasswordDecision;
+import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.behl.cerberus.configuration.TokenConfigurationProperties;
 import com.behl.cerberus.configuration.TokenConfigurationProperties.RefreshToken;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.entity.User;
-import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.InvalidCredentialsException;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.CacheManager;
@@ -33,9 +36,10 @@ class AuthenticationServiceTest {
 	private final UserRepository userRepository = mock(UserRepository.class);
 	private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 	private final RefreshTokenGenerator refreshTokenGenerator = mock(RefreshTokenGenerator.class);
+	private final CompromisedPasswordChecker compromisedPasswordChecker = mock(CompromisedPasswordChecker.class);
 	private final TokenConfigurationProperties tokenConfigurationProperties = mock(TokenConfigurationProperties.class);
 	
-	private final AuthenticationService authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, tokenConfigurationProperties);
+	private final AuthenticationService authenticationService = new AuthenticationService(jwtUtility, cacheManager, userRepository, passwordEncoder, refreshTokenGenerator, compromisedPasswordChecker, tokenConfigurationProperties);
 
 	@Test
 	void loginShouldThrowExceptionForNonRegisteredEmailId() {
@@ -48,7 +52,7 @@ class AuthenticationServiceTest {
 		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.empty());
 		
 		// assert InvalidLoginCredentialsException is thrown for unregistered email-id
-		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(userLoginRequest));
+		assertThrows(InvalidCredentialsException.class, () -> authenticationService.login(userLoginRequest));
 		
 		// verify mock interactions
 		verify(userRepository).findByEmailId(emailId);
@@ -73,11 +77,43 @@ class AuthenticationServiceTest {
 		when(passwordEncoder.matches(password, encodedPassword)).thenReturn(Boolean.FALSE);
 		
 		// assert InvalidLoginCredentialsException is thrown for invalid password
-		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(userLoginRequest));
+		assertThrows(InvalidCredentialsException.class, () -> authenticationService.login(userLoginRequest));
 
 		// verify mock interactions
 		verify(userRepository).findByEmailId(emailId);
 		verify(passwordEncoder).matches(password, encodedPassword);
+	}
+	
+	@Test
+	void loginShouldThrowExceptionForCompromisedPassword() {
+		// prepare login request
+		final var emailId = "mail@domain.ut";
+		final var password = "compromised-password";
+		final var userLoginRequest = mock(UserLoginRequestDto.class);
+		when(userLoginRequest.getEmailId()).thenReturn(emailId);
+		when(userLoginRequest.getPassword()).thenReturn(password);
+		
+		// prepare datasource response
+		final var encodedPassword = "test-encoded-password";
+		final var user = mock(User.class);
+		when(user.getPassword()).thenReturn(encodedPassword);
+		when(userRepository.findByEmailId(emailId)).thenReturn(Optional.of(user));
+		
+		// set password validation to pass
+		when(passwordEncoder.matches(password, encodedPassword)).thenReturn(Boolean.TRUE);
+		
+		// set compromised password check failure
+		final var compromisedPasswordDecision = mock(CompromisedPasswordDecision.class);
+		when(compromisedPasswordDecision.isCompromised()).thenReturn(Boolean.TRUE);
+		when(compromisedPasswordChecker.check(password)).thenReturn(compromisedPasswordDecision);
+		
+		// assert CompromisedPasswordException is thrown for invalid password
+		assertThrows(CompromisedPasswordException.class, () -> authenticationService.login(userLoginRequest));
+
+		// verify mock interactions
+		verify(userRepository).findByEmailId(emailId);
+		verify(passwordEncoder).matches(password, encodedPassword);
+		verify(compromisedPasswordChecker).check(password);
 	}
 	
 	@Test
@@ -100,6 +136,11 @@ class AuthenticationServiceTest {
 		// set password validation to pass
 		when(passwordEncoder.matches(password, encodedPassword)).thenReturn(Boolean.TRUE);
 
+		// set compromised password check to pass
+		final var compromisedPasswordDecision = mock(CompromisedPasswordDecision.class);
+		when(compromisedPasswordDecision.isCompromised()).thenReturn(Boolean.FALSE);
+		when(compromisedPasswordChecker.check(password)).thenReturn(compromisedPasswordDecision);
+		
 		// set token generation
 		final var accessToken = "test-access-token";
 		final var refreshToken = "test-refresh-token";
@@ -124,6 +165,7 @@ class AuthenticationServiceTest {
 		// verify mock interactions
 		verify(userRepository).findByEmailId(emailId);
 		verify(passwordEncoder).matches(password, encodedPassword);
+		verify(compromisedPasswordChecker).check(password);
 		verify(jwtUtility).generateAccessToken(user);
 		verify(refreshTokenGenerator).generate();
 		verify(cacheManager).save(refreshToken, userId, Duration.ofMinutes(refreshTokenValidity));
@@ -175,6 +217,5 @@ class AuthenticationServiceTest {
 		assertThrows(IllegalArgumentException.class, () -> authenticationService.login(null));
 		assertThrows(IllegalArgumentException.class, () -> authenticationService.refreshToken(null));
 	}
-	
 	
 }

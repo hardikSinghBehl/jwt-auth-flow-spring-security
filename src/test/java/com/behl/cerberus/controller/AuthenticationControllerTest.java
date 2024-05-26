@@ -28,7 +28,7 @@ import com.behl.cerberus.configuration.SecurityConfiguration;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
 import com.behl.cerberus.exception.ExceptionResponseHandler;
-import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.InvalidCredentialsException;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.service.AuthenticationService;
 import com.behl.cerberus.service.TokenRevocationService;
@@ -67,7 +67,7 @@ class AuthenticationControllerTest {
 		userLoginRequest.setPassword("test-password");
 
 		// mock service layer to throw InvalidLoginCredentialsException
-		when(authenticationService.login(refEq(userLoginRequest))).thenThrow(new InvalidLoginCredentialsException());
+		when(authenticationService.login(refEq(userLoginRequest))).thenThrow(new InvalidCredentialsException("Invalid login credentials provided."));
 
 		// execute API request
 		final var apiPath = "/auth/login";
@@ -78,7 +78,7 @@ class AuthenticationControllerTest {
 				.andExpect(status().isUnauthorized())
 				.andDo(print())
 				.andExpect(jsonPath("$.Status").value(HttpStatus.UNAUTHORIZED.toString()))
-				.andExpect(jsonPath("$.Description").value("Invalid login credentials provided"));
+				.andExpect(jsonPath("$.Description").value("Invalid login credentials provided."));
 
 		// verify mock interaction
 		verify(authenticationService).login(refEq(userLoginRequest));
