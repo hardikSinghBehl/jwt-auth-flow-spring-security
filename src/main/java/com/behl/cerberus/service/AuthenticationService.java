@@ -4,13 +4,15 @@ import java.time.Duration;
 import java.util.UUID;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.security.authentication.password.CompromisedPasswordChecker;
+import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.behl.cerberus.configuration.TokenConfigurationProperties;
 import com.behl.cerberus.dto.TokenSuccessResponseDto;
 import com.behl.cerberus.dto.UserLoginRequestDto;
-import com.behl.cerberus.exception.InvalidLoginCredentialsException;
+import com.behl.cerberus.exception.InvalidCredentialsException;
 import com.behl.cerberus.exception.TokenVerificationException;
 import com.behl.cerberus.repository.UserRepository;
 import com.behl.cerberus.utility.CacheManager;
@@ -30,17 +32,23 @@ public class AuthenticationService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenGenerator refreshTokenGenerator;
+	private final CompromisedPasswordChecker compromisedPasswordChecker;
 	private final TokenConfigurationProperties tokenConfigurationProperties;
 
 	public TokenSuccessResponseDto login(@NonNull final UserLoginRequestDto userLoginRequestDto) {
 		final var user = userRepository.findByEmailId(userLoginRequestDto.getEmailId())
-				.orElseThrow(InvalidLoginCredentialsException::new);
+				.orElseThrow(() -> new InvalidCredentialsException("Invalid login credentials provided."));
 
 		final var encodedPassword = user.getPassword();
 		final var plainTextPassword = userLoginRequestDto.getPassword();
 		final var isCorrectPassword = passwordEncoder.matches(plainTextPassword, encodedPassword);
 		if (Boolean.FALSE.equals(isCorrectPassword)) {
-			throw new InvalidLoginCredentialsException();
+			throw new InvalidCredentialsException("Invalid login credentials provided.");
+		}
+		
+		final var isPasswordCompromised = compromisedPasswordChecker.check(plainTextPassword).isCompromised();
+		if (Boolean.TRUE.equals(isPasswordCompromised)) {
+			throw new CompromisedPasswordException("Password has been compromised. Password reset required.");
 		}
 
 		final var accessToken = jwtUtility.generateAccessToken(user);		

@@ -45,6 +45,8 @@ public class UserController {
 			@ApiResponse(responseCode = "201", description = "User account created successfully",
 					content = @Content(schema = @Schema(implementation = Void.class))),
 			@ApiResponse(responseCode = "409", description = "User account with provided email-id already exists",
+					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))),
+			@ApiResponse(responseCode = "422", description = "Provided password is compromised",
 					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
 	public ResponseEntity<HttpStatus> createUser(@Valid @RequestBody final UserCreationRequestDto userCreationRequest) {
 		userService.create(userCreationRequest);
