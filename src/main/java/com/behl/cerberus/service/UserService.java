@@ -7,12 +7,14 @@ import org.springframework.security.authentication.password.CompromisedPasswordE
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.behl.cerberus.dto.ResetPasswordRequestDto;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.entity.UserStatus;
 import com.behl.cerberus.exception.AccountAlreadyExistsException;
+import com.behl.cerberus.exception.InvalidCredentialsException;
 import com.behl.cerberus.repository.UserRepository;
 
 import lombok.NonNull;
@@ -54,6 +56,28 @@ public class UserService {
 		final var user = getUserById(userId);
 		user.setFirstName(userUpdationRequestDto.getFirstName());
 		user.setLastName(userUpdationRequestDto.getLastName());
+		userRepository.save(user);
+	}
+	
+	public void resetPassword(@NonNull final ResetPasswordRequestDto resetPasswordRequest) {
+		final var user = userRepository.findByEmailId(resetPasswordRequest.getEmailId())
+				.orElseThrow(() -> new InvalidCredentialsException("No user exists with given email/current-password combination."));
+
+		final var existingEncodedPassword = user.getPassword();
+		final var plainTextCurrentPassword = resetPasswordRequest.getCurrentPassword();
+		final var isCorrectPassword = passwordEncoder.matches(plainTextCurrentPassword, existingEncodedPassword);
+		if (Boolean.FALSE.equals(isCorrectPassword)) {
+			throw new InvalidCredentialsException("No user exists with given email/current-password combination.");
+		}
+
+		final var newPassword = resetPasswordRequest.getNewPassword();
+		final var isNewPasswordCompromised = compromisedPasswordChecker.check(newPassword).isCompromised();
+		if (Boolean.TRUE.equals(isNewPasswordCompromised)) {
+			throw new CompromisedPasswordException("New password selected is compromised and cannot be used.");
+		}
+
+		final var encodedNewPassword = passwordEncoder.encode(newPassword);
+		user.setPassword(encodedNewPassword);
 		userRepository.save(user);
 	}
 
