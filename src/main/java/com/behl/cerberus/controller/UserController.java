@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.behl.cerberus.configuration.PublicEndpoint;
 import com.behl.cerberus.dto.ExceptionResponseDto;
+import com.behl.cerberus.dto.ResetPasswordRequestDto;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
@@ -45,6 +46,8 @@ public class UserController {
 			@ApiResponse(responseCode = "201", description = "User account created successfully",
 					content = @Content(schema = @Schema(implementation = Void.class))),
 			@ApiResponse(responseCode = "409", description = "User account with provided email-id already exists",
+					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))),
+			@ApiResponse(responseCode = "422", description = "Provided password is compromised",
 					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
 	public ResponseEntity<HttpStatus> createUser(@Valid @RequestBody final UserCreationRequestDto userCreationRequest) {
 		userService.create(userCreationRequest);
@@ -70,6 +73,21 @@ public class UserController {
 		final var userId = authenticatedUserIdProvider.getUserId();
 		final var userDetail = userService.getById(userId);
 		return ResponseEntity.ok(userDetail);
+	}
+	
+	@PublicEndpoint
+	@PutMapping(value = "/reset-password", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Resets user's current password", description = "Non secured endpoint to help user reset their current password with a new password of choosing.")
+	@ApiResponses(value = { 
+			@ApiResponse(responseCode = "200", description = "Password reset successfully",
+					content = @Content(schema = @Schema(implementation = Void.class))),
+			@ApiResponse(responseCode = "401", description = "No user account exists with given email/current-password combination.",
+					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))),
+			@ApiResponse(responseCode = "422", description = "Provided new password is compromised",
+					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
+	public ResponseEntity<HttpStatus> resetPassword(@Valid @RequestBody final ResetPasswordRequestDto resetPasswordRequest) {
+		userService.resetPassword(resetPasswordRequest);
+		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 	
 	@DeleteMapping(value = "/deactivate")

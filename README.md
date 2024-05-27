@@ -1,5 +1,5 @@
 ## JWT Authentication and Authorization Flow using Spring Security
-##### A reference proof-of-concept that leverages Spring-security to implement JWT based authentication, API access control and Token revocation.
+##### A reference proof-of-concept that leverages Spring-security to implement JWT based authentication, API access control, Token revocation and Compromised password detection.
 ##### 🛠 upgraded to Spring Boot 3 and Spring Security 6 🛠 
 
 ### Key Components
@@ -78,6 +78,34 @@ The below API response is returned when authentication succeeds i.e Access Token
 }
 ```
 If the user's permissions have changed, the client can leverage available refresh token to request a new JWT, reflecting the new permissions that the user has obtained.
+
+### Compromised Password Detection
+
+To protect user accounts from the use of vulnerable passwords that have been exposed in data breaches, the project uses the new compromised password detection feature added in `spring-security:6.3`. The default implementation provided uses the [Have I Been Pwned API](https://haveibeenpwned.com/API/v3#PwnedPasswords) under the hood.
+
+The compromised password check is performed during two key scenarios:
+* **User creation**: When a new user is being registered via the user creation API, the provided password is checked.
+* **User Login**: Even if a password was not compromised at the time of user creation, it may become compromised at a later point. To address this, the login API also incorporates the compromised password check.
+
+In case of compromised password detection in any of the above scenarios, the server responds with the below error:
+
+```json
+{
+  "Status": "422 UNPROCESSABLE_ENTITY",
+  "Description": "The provided password is compromised and cannot be used for account creation."
+}
+```
+
+To recover from a compromised password situation during login, a new API endpoint PUT `/users/reset-password` is exposed. This endpoint accepts the below request body payload:
+
+```json
+{
+  "EmailId": "hardik@behl.com",
+  "CurrentPassword": "somethingCompromised",
+  "NewPassword": "somethingSecured"
+}
+```
+The new password is also checked for compromise before allowing the password reset.
 
 ---
 ### Local Setup

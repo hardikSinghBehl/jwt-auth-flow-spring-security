@@ -2,15 +2,19 @@ package com.behl.cerberus.service;
 
 import java.util.UUID;
 
+import org.springframework.security.authentication.password.CompromisedPasswordChecker;
+import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.behl.cerberus.dto.ResetPasswordRequestDto;
 import com.behl.cerberus.dto.UserCreationRequestDto;
 import com.behl.cerberus.dto.UserDetailDto;
 import com.behl.cerberus.dto.UserUpdationRequestDto;
 import com.behl.cerberus.entity.User;
 import com.behl.cerberus.entity.UserStatus;
 import com.behl.cerberus.exception.AccountAlreadyExistsException;
+import com.behl.cerberus.exception.InvalidCredentialsException;
 import com.behl.cerberus.repository.UserRepository;
 
 import lombok.NonNull;
@@ -23,19 +27,26 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final TokenRevocationService tokenRevocationService;
+	private final CompromisedPasswordChecker compromisedPasswordChecker;
 
-	public void create(@NonNull final UserCreationRequestDto userCreationRequestDto) {
-		final var emailId = userCreationRequestDto.getEmailId();
+	public void create(@NonNull final UserCreationRequestDto userCreationRequest) {
+		final var emailId = userCreationRequest.getEmailId();
 		final var userAccountExistsWithEmailId = userRepository.existsByEmailId(emailId);
 		if (Boolean.TRUE.equals(userAccountExistsWithEmailId)) {
 			throw new AccountAlreadyExistsException("Account with provided email-id already exists");
 		}
+
+		final var plainTextPassword = userCreationRequest.getPassword();
+		final var isPasswordCompromised = compromisedPasswordChecker.check(plainTextPassword).isCompromised();
+		if (Boolean.TRUE.equals(isPasswordCompromised)) {
+			throw new CompromisedPasswordException("The provided password is compromised and cannot be used for account creation.");
+		}
 		
 		final var user = new User();
-		final var encodedPassword = passwordEncoder.encode(userCreationRequestDto.getPassword());
-		user.setFirstName(userCreationRequestDto.getFirstName());
-		user.setLastName(userCreationRequestDto.getLastName());
-		user.setEmailId(userCreationRequestDto.getEmailId());
+		final var encodedPassword = passwordEncoder.encode(plainTextPassword);
+		user.setFirstName(userCreationRequest.getFirstName());
+		user.setLastName(userCreationRequest.getLastName());
+		user.setEmailId(userCreationRequest.getEmailId());
 		user.setPassword(encodedPassword);
 
 		userRepository.save(user);
@@ -45,6 +56,28 @@ public class UserService {
 		final var user = getUserById(userId);
 		user.setFirstName(userUpdationRequestDto.getFirstName());
 		user.setLastName(userUpdationRequestDto.getLastName());
+		userRepository.save(user);
+	}
+	
+	public void resetPassword(@NonNull final ResetPasswordRequestDto resetPasswordRequest) {
+		final var user = userRepository.findByEmailId(resetPasswordRequest.getEmailId())
+				.orElseThrow(() -> new InvalidCredentialsException("No user exists with given email/current-password combination."));
+
+		final var existingEncodedPassword = user.getPassword();
+		final var plainTextCurrentPassword = resetPasswordRequest.getCurrentPassword();
+		final var isCorrectPassword = passwordEncoder.matches(plainTextCurrentPassword, existingEncodedPassword);
+		if (Boolean.FALSE.equals(isCorrectPassword)) {
+			throw new InvalidCredentialsException("No user exists with given email/current-password combination.");
+		}
+
+		final var newPassword = resetPasswordRequest.getNewPassword();
+		final var isNewPasswordCompromised = compromisedPasswordChecker.check(newPassword).isCompromised();
+		if (Boolean.TRUE.equals(isNewPasswordCompromised)) {
+			throw new CompromisedPasswordException("New password selected is compromised and cannot be used.");
+		}
+
+		final var encodedNewPassword = passwordEncoder.encode(newPassword);
+		user.setPassword(encodedNewPassword);
 		userRepository.save(user);
 	}
 

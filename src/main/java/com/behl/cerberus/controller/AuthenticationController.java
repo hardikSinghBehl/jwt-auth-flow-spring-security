@@ -40,6 +40,8 @@ public class AuthenticationController {
 	@ApiResponses(value = { 
 			@ApiResponse(responseCode = "200", description = "Authentication successfull"),
 			@ApiResponse(responseCode = "401", description = "Bad credentials provided. Failed to authenticate user",
+					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))),
+			@ApiResponse(responseCode = "422", description = "Password has been compromised",
 					content = @Content(schema = @Schema(implementation = ExceptionResponseDto.class))) })
 	public ResponseEntity<TokenSuccessResponseDto> login(@Valid @RequestBody final UserLoginRequestDto userLoginRequest) {
 		final var tokenResponse = authenticationService.login(userLoginRequest);

@@ -10,10 +10,10 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -34,7 +34,6 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 	private static final String FORBIDDEN_ERROR_MESSAGE = "Access Denied: You do not have sufficient privileges to access this resource.";
 	private static final String NOT_READABLE_REQUEST_ERROR_MESSAGE = "The request is malformed. Ensure the JSON structure is correct.";
 	
-	@ResponseBody
 	@ExceptionHandler(ResponseStatusException.class)
 	public ResponseEntity<ExceptionResponseDto<String>> responseStatusExceptionHandler(final ResponseStatusException exception) {
 		logException(exception);
@@ -42,6 +41,16 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 		exceptionResponse.setStatus(exception.getStatusCode().toString());
 		exceptionResponse.setDescription(exception.getReason());
 		return ResponseEntity.status(exception.getStatusCode()).body(exceptionResponse);
+	}
+	
+	@ExceptionHandler(CompromisedPasswordException.class)
+	public ResponseEntity<ExceptionResponseDto<String>> compromisedPasswordExceptionHandler(final CompromisedPasswordException exception) {
+		logException(exception);
+		final var statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+		final var exceptionResponse = new ExceptionResponseDto<String>();
+		exceptionResponse.setStatus(statusCode.toString());
+		exceptionResponse.setDescription(exception.getMessage());
+		return ResponseEntity.status(statusCode).body(exceptionResponse);
 	}
 	
 	@ExceptionHandler(AccessDeniedException.class)
@@ -97,7 +106,6 @@ public class ExceptionResponseHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.badRequest().body(exceptionResponse);
 	}
 
-	@ResponseBody
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> serverExceptionHandler(final Exception exception) {
 		logException(exception);
