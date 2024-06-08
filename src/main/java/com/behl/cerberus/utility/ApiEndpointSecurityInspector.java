@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -34,10 +37,11 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @RequiredArgsConstructor
-@EnableConfigurationProperties(OpenApiConfigurationProperties.class)
+@EnableConfigurationProperties({ OpenApiConfigurationProperties.class, WebEndpointProperties.class})
 public class ApiEndpointSecurityInspector {
 
-	private final RequestMappingHandlerMapping requestHandlerMapping;
+	private final WebEndpointProperties webEndpointProperties;
+	private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 	private final OpenApiConfigurationProperties openApiConfigurationProperties;
 	
 	private static final List<String> SWAGGER_V3_PATHS = List.of("/swagger-ui**/**", "/v3/api-docs**/**");
@@ -57,7 +61,7 @@ public class ApiEndpointSecurityInspector {
 	 */
 	@PostConstruct
 	public void init() {
-		final var handlerMethods = requestHandlerMapping.getHandlerMethods();
+		final var handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
 		handlerMethods.forEach((requestInfo, handlerMethod) -> {
 			if (handlerMethod.hasMethodAnnotation(PublicEndpoint.class)) {
 				final var httpMethod = requestInfo.getMethodsCondition().getMethods().iterator().next().asHttpMethod();
@@ -77,6 +81,9 @@ public class ApiEndpointSecurityInspector {
 		if (Boolean.TRUE.equals(openApiEnabled)) {
 			publicGetEndpoints.addAll(SWAGGER_V3_PATHS);
 		}
+		
+		final var actuatorEndpoints = getActuatorEndpoints();
+		publicGetEndpoints.addAll(actuatorEndpoints);
 	}
 
 	/**
@@ -110,6 +117,19 @@ public class ApiEndpointSecurityInspector {
 			default:
 				return Collections.emptyList();
 		}
+	}
+	
+	private List<String> getActuatorEndpoints() {
+		final var basePath = webEndpointProperties.getBasePath();
+		final var includedEndpoints = webEndpointProperties.getExposure().getInclude();
+		final var excludedEndpoints = webEndpointProperties.getExposure().getExclude();
+
+		return includedEndpoints.stream()
+				.filter(Predicate.not(excludedEndpoints::contains))
+				.flatMap(endpoint -> Stream.of(
+						String.format("%s/%s", basePath, endpoint),
+						String.format("%s/%s/*", basePath, endpoint)))
+				.toList();
 	}
 	
 }

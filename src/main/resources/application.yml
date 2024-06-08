@@ -32,3 +32,9 @@ com:
         api-version: 1.0.0
         title: Cerberus
         description: Java Backend application using Spring-security to implement JWT based Authentication and Authorization
+        
+management:
+  endpoints:
+    web:
+      exposure:
+        include: sbom
